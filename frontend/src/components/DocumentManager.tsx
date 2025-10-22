@@ -17,12 +17,10 @@ export function DocumentManager() {
   const [activeTab, setActiveTab] = useState<'upload' | 'search'>('upload');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Load indices on mount
   useEffect(() => {
     loadIndices();
   }, []);
 
-  // Auto-select first index
   useEffect(() => {
     if (indices.length > 0 && !selectedIndex) {
       setSelectedIndex(indices[0].name);
@@ -63,7 +61,6 @@ export function DocumentManager() {
         setSelectedIndex(indexName);
       }
       
-      // Clear file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -120,75 +117,82 @@ export function DocumentManager() {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md">
+    <div className="bg-white rounded-2xl shadow-lg border border-gray-200">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200">
-        <h2 className="text-xl font-semibold text-gray-800 flex items-center space-x-2">
-          <FiDatabase className="w-6 h-6" />
-          <span>Document Management (RAG)</span>
+      <div className="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white rounded-t-2xl">
+        <h2 className="text-2xl font-bold text-gray-900 flex items-center space-x-3 mb-2">
+          <div className="p-2 bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl">
+            <FiDatabase className="w-6 h-6 text-purple-600" />
+          </div>
+          <span>Document Management</span>
         </h2>
-        <p className="text-sm text-gray-600 mt-1">
+        <p className="text-sm text-gray-600">
           Upload documents and search using hybrid retrieval (semantic + keyword)
         </p>
       </div>
 
       {/* Alerts */}
       {error && (
-        <div className="m-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-start space-x-2">
+        <div className="mx-8 mt-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg flex items-start space-x-3 shadow-sm">
           <FiAlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-          <span>{error}</span>
+          <span className="text-sm font-medium">{error}</span>
         </div>
       )}
       {success && (
-        <div className="m-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
-          {success}
+        <div className="mx-8 mt-6 p-4 bg-green-50 border-l-4 border-green-500 text-green-700 rounded-lg shadow-sm">
+          <span className="text-sm font-medium">{success}</span>
         </div>
       )}
 
       {/* Tab Navigation */}
-      <div className="flex border-b border-gray-200 px-4">
+      <div className="flex border-b border-gray-200 px-8 mt-4">
         <button
           onClick={() => setActiveTab('upload')}
-          className={`px-6 py-3 font-medium transition-colors ${
+          className={`px-6 py-3 font-medium transition-all relative ${
             activeTab === 'upload'
-              ? 'border-b-2 border-primary-600 text-primary-600'
+              ? 'text-blue-600'
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
           <FiUpload className="inline w-4 h-4 mr-2" />
           Upload Documents
+          {activeTab === 'upload' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-600 to-indigo-600" />
+          )}
         </button>
         <button
           onClick={() => setActiveTab('search')}
-          className={`px-6 py-3 font-medium transition-colors ${
+          className={`px-6 py-3 font-medium transition-all relative ${
             activeTab === 'search'
-              ? 'border-b-2 border-primary-600 text-primary-600'
+              ? 'text-blue-600'
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
           <FiSearch className="inline w-4 h-4 mr-2" />
           Search Documents
+          {activeTab === 'search' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-600 to-indigo-600" />
+          )}
         </button>
       </div>
 
       {/* Content */}
-      <div className="p-6">
+      <div className="p-8">
         {activeTab === 'upload' ? (
-          // Upload Tab
           <div className="space-y-6">
             {/* Index Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
+              <label className="block text-sm font-semibold text-gray-900 mb-3">
                 Select or Create Index
               </label>
-              <div className="flex space-x-2">
+              <div className="flex space-x-3">
                 <select
                   value={selectedIndex}
                   onChange={(e) => {
                     setSelectedIndex(e.target.value);
                     setNewIndexName('');
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm"
                   disabled={uploading}
                 >
                   <option value="">Select existing index...</option>
@@ -198,7 +202,7 @@ export function DocumentManager() {
                     </option>
                   ))}
                 </select>
-                <span className="flex items-center text-gray-500">or</span>
+                <span className="flex items-center text-gray-500 font-medium">or</span>
                 <input
                   type="text"
                   placeholder="New index name"
@@ -207,7 +211,7 @@ export function DocumentManager() {
                     setNewIndexName(e.target.value);
                     setSelectedIndex('');
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm"
                   disabled={uploading}
                 />
               </div>
@@ -215,10 +219,10 @@ export function DocumentManager() {
 
             {/* File Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-900 mb-3">
                 Upload Document
               </label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary-500 transition-colors">
+              <div className="border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center hover:border-blue-500 hover:bg-blue-50/30 transition-all cursor-pointer bg-gradient-to-br from-gray-50 to-white">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -230,10 +234,12 @@ export function DocumentManager() {
                 />
                 <label
                   htmlFor="file-upload"
-                  className="cursor-pointer flex flex-col items-center space-y-2"
+                  className="cursor-pointer flex flex-col items-center space-y-3"
                 >
-                  <FiUpload className="w-12 h-12 text-gray-400" />
-                  <span className="text-gray-600 font-medium">
+                  <div className="p-4 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl">
+                    <FiUpload className="w-10 h-10 text-blue-600" />
+                  </div>
+                  <span className="text-gray-900 font-semibold text-lg">
                     {uploading ? 'Uploading...' : 'Click to upload document'}
                   </span>
                   <span className="text-sm text-gray-500">
@@ -245,20 +251,22 @@ export function DocumentManager() {
 
             {/* Indices List */}
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Existing Indices</h3>
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">Existing Indices</h3>
               {indices.length === 0 ? (
-                <p className="text-gray-500 text-sm">No indices created yet</p>
+                <p className="text-gray-500 text-sm text-center py-8 bg-gray-50 rounded-xl">No indices created yet</p>
               ) : (
-                <div className="space-y-2">
+                <div className="grid gap-3">
                   {indices.map((index) => (
                     <div
                       key={index.name}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      className="group flex items-center justify-between p-4 bg-gradient-to-r from-white to-gray-50 rounded-xl border border-gray-200 hover:border-purple-300 hover:shadow-lg transition-all"
                     >
                       <div className="flex items-center space-x-3">
-                        <FiDatabase className="w-5 h-5 text-gray-500" />
+                        <div className="p-2 bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg">
+                          <FiDatabase className="w-5 h-5 text-purple-600" />
+                        </div>
                         <div>
-                          <p className="font-medium text-gray-800">{index.name}</p>
+                          <p className="font-semibold text-gray-900">{index.name}</p>
                           <p className="text-sm text-gray-500">
                             {index.document_count} document{index.document_count !== 1 ? 's' : ''}
                           </p>
@@ -266,7 +274,7 @@ export function DocumentManager() {
                       </div>
                       <button
                         onClick={() => handleDeleteIndex(index.name)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100 border border-transparent hover:border-red-200"
                         title="Delete index"
                       >
                         <FiTrash2 className="w-5 h-5" />
@@ -278,17 +286,16 @@ export function DocumentManager() {
             </div>
           </div>
         ) : (
-          // Search Tab
           <div className="space-y-6">
             {/* Index Selection for Search */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
+              <label className="block text-sm font-semibold text-gray-900 mb-3">
                 Search in Index
               </label>
               <select
                 value={selectedIndex}
                 onChange={(e) => setSelectedIndex(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm"
                 disabled={searching}
               >
                 <option value="">Select an index...</option>
@@ -302,49 +309,49 @@ export function DocumentManager() {
 
             {/* Search Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-900 mb-3">
                 Search Type
               </label>
-              <div className="flex space-x-2">
+              <div className="flex space-x-3">
                 {(['hybrid', 'semantic', 'lexical'] as const).map((type) => (
                   <button
                     key={type}
                     onClick={() => setSearchType(type)}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all shadow-sm ${
                       searchType === type
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30'
+                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400'
                     }`}
                   >
                     {type.charAt(0).toUpperCase() + type.slice(1)}
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 mt-2">
                 Hybrid = Semantic + Keyword | Semantic = Vector similarity | Lexical = Keyword matching
               </p>
             </div>
 
             {/* Search Input */}
             <form onSubmit={handleSearch}>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-900 mb-3">
                 Search Query
               </label>
-              <div className="flex space-x-2">
+              <div className="flex space-x-3">
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Enter your search query..."
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
                   disabled={searching || !selectedIndex}
                 />
                 <button
                   type="submit"
                   disabled={searching || !searchQuery.trim() || !selectedIndex}
-                  className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center space-x-2 font-medium shadow-lg shadow-blue-500/30"
                 >
-                  <FiSearch />
+                  <FiSearch className="w-4 h-4" />
                   <span>{searching ? 'Searching...' : 'Search'}</span>
                 </button>
               </div>
@@ -353,32 +360,32 @@ export function DocumentManager() {
             {/* Search Results */}
             {searchResults.length > 0 && (
               <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-3">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">
                   Search Results ({searchResults.length})
                 </h3>
                 <div className="space-y-3">
                   {searchResults.map((result, index) => (
                     <div
                       key={result.chunk_id}
-                      className="p-4 bg-gray-50 rounded-lg border border-gray-200"
+                      className="p-5 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all"
                     >
-                      <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center space-x-2">
-                          <FiFile className="w-4 h-4 text-gray-500" />
-                          <span className="text-sm font-medium text-gray-700">
+                          <FiFile className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm font-semibold text-gray-900">
                             Result #{index + 1}
                           </span>
                         </div>
-                        <span className="text-xs font-semibold text-primary-600 bg-primary-50 px-2 py-1 rounded">
+                        <span className="text-xs font-bold text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
                           Score: {result.score.toFixed(3)}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-800 whitespace-pre-wrap mb-2">
+                      <p className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed mb-3">
                         {result.text}
                       </p>
                       {result.metadata && Object.keys(result.metadata).length > 0 && (
-                        <div className="text-xs text-gray-500 border-t border-gray-200 pt-2 mt-2">
-                          <strong>Metadata:</strong>{' '}
+                        <div className="text-xs text-gray-500 border-t border-gray-200 pt-3 mt-3">
+                          <strong className="text-gray-700">Metadata:</strong>{' '}
                           {Object.entries(result.metadata)
                             .map(([key, value]) => `${key}: ${value}`)
                             .join(' • ')}
