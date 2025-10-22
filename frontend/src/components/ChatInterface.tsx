@@ -85,7 +85,7 @@ export function ChatInterface() {
   };
 
   return (
-    <div className="bg-white rounded-lg sm:rounded-xl md:rounded-2xl shadow-lg border border-gray-200 flex flex-col h-[calc(100vh-2rem)] sm:h-[calc(100vh-8rem)]">
+    <div className="bg-white rounded-lg sm:rounded-xl md:rounded-2xl shadow-lg border border-gray-200 flex flex-col h-[calc(100vh-12rem)] sm:h-[calc(100vh-14rem)]">
       {/* Header */}
       <div className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-gray-50 to-white rounded-t-lg sm:rounded-t-xl md:rounded-t-2xl">
         <div className="flex items-center space-x-1.5 sm:space-x-2 min-w-0 flex-1">
@@ -210,6 +210,46 @@ export function ChatInterface() {
                 max="2"
                 step="0.1"
               />
+            </div>
+          </div>
+          
+          {/* Output Format and Template Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 mb-2 sm:mb-3">
+            <div className="bg-white rounded-md sm:rounded-lg p-2 sm:p-2.5 shadow-sm">
+              <label className="block text-xs font-semibold text-gray-900 mb-1.5 sm:mb-2">
+                📄 Output Format
+              </label>
+              <select
+                value={options.output_format || 'TEXT'}
+                onChange={(e) => setOptions({ ...options, output_format: e.target.value })}
+                className="w-full px-2 sm:px-3 py-1.5 border border-gray-300 rounded-md sm:rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-xs sm:text-sm font-medium transition-all hover:border-gray-400"
+              >
+                <option value="TEXT">Text (Default)</option>
+                <option value="JSON">JSON</option>
+                <option value="CSV">CSV</option>
+                <option value="PDF">PDF</option>
+                <option value="DOCX">DOCX</option>
+                <option value="PPT">PPT</option>
+              </select>
+              <p className="mt-1 text-xs text-gray-500">
+                Select the desired output format
+              </p>
+            </div>
+            
+            <div className="bg-white rounded-md sm:rounded-lg p-2 sm:p-2.5 shadow-sm">
+              <label className="block text-xs font-semibold text-gray-900 mb-1.5 sm:mb-2">
+                📋 Output Template
+              </label>
+              <textarea
+                value={options.output_template || ''}
+                onChange={(e) => setOptions({ ...options, output_template: e.target.value })}
+                placeholder="Enter template structure (optional)&#10;Example: &#10;{&#10;  &quot;title&quot;: &quot;&quot;,&#10;  &quot;summary&quot;: &quot;&quot;&#10;}"
+                className="w-full px-2 sm:px-3 py-1.5 border border-gray-300 rounded-md sm:rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-xs sm:text-sm font-mono"
+                rows={3}
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Provide a template to structure the output
+              </p>
             </div>
           </div>
           
