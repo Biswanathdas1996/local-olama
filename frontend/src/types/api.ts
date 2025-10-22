@@ -9,6 +9,8 @@ export interface GenerateRequest {
   repeat_penalty?: number;
   context?: number[];
   indices?: string[];
+  output_format?: string;
+  output_template?: string;
 }
 
 export interface ModelDownloadRequest {
@@ -84,6 +86,8 @@ export interface GenerationOptions {
   top_p: number;
   top_k: number;
   repeat_penalty: number;
+  output_format?: string;
+  output_template?: string;
 }
 
 // RAG / Document Management Types

@@ -145,6 +145,7 @@ async def generate_text(request: GenerateRequest) -> GenerateResponse:
     - Multiple generation parameters (temperature, top_p, etc.)
     - Multi-turn conversations via context parameter
     - RAG-enhanced generation via indices parameter (optional)
+    - Output formatting via output_format and output_template parameters
     - Non-streaming responses only
     
     Args:
@@ -176,6 +177,42 @@ async def generate_text(request: GenerateRequest) -> GenerateResponse:
             else:
                 logger.warning("No relevant context found, using original prompt")
         
+        # Apply output format and template instructions
+        output_format = request.output_format or "TEXT"
+        output_template = request.output_template
+        
+        # Build format-specific instructions
+        format_instructions = ""
+        if output_format != "TEXT":
+            format_instructions = f"\n\nIMPORTANT: Please format your response as {output_format}."
+            
+            if output_format == "JSON":
+                format_instructions += " Provide a valid JSON object."
+                if output_template:
+                    format_instructions += f" Use this template structure:\n{output_template}"
+            elif output_format == "CSV":
+                format_instructions += " Format the data as comma-separated values with headers."
+                if output_template:
+                    format_instructions += f" Use these columns:\n{output_template}"
+            elif output_format == "PDF":
+                format_instructions += " Structure the content as if it will be converted to a PDF document with clear sections and formatting."
+                if output_template:
+                    format_instructions += f" Follow this structure:\n{output_template}"
+            elif output_format == "DOCX":
+                format_instructions += " Structure the content as a Word document with clear sections, headings, and formatting."
+                if output_template:
+                    format_instructions += f" Follow this structure:\n{output_template}"
+            elif output_format == "PPT":
+                format_instructions += " Structure the content as PowerPoint slides with clear slide titles and bullet points."
+                if output_template:
+                    format_instructions += f" Follow this structure:\n{output_template}"
+        elif output_template:
+            # Even for TEXT format, apply template if provided
+            format_instructions = f"\n\nPlease structure your response according to this template:\n{output_template}"
+        
+        # Add format instructions to the prompt
+        augmented_prompt = augmented_prompt + format_instructions
+        
         # Log prompt statistics
         prompt_stats = context_handler.get_prompt_stats(augmented_prompt)
         logger.info(
@@ -183,6 +220,8 @@ async def generate_text(request: GenerateRequest) -> GenerateResponse:
             model=request.model,
             rag_enabled=bool(request.indices),
             indices_count=len(request.indices) if request.indices else 0,
+            output_format=output_format,
+            has_template=bool(output_template),
             **prompt_stats
         )
         
