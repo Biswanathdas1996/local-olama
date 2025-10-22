@@ -53,12 +53,42 @@ Both workflows start automatically when you run the project.
 
 ### Environment Configuration
 
-The backend uses environment variables from `.env` file (optional, has sensible defaults):
+The backend uses environment variables from a `.env` file (optional, has sensible defaults). To customize the configuration:
+
+1. Copy `.env.example` to `.env`: `cp .env.example .env`
+2. Edit `.env` with your desired values
+
+**Available Environment Variables:**
+
+**Ollama Configuration:**
 - `OLLAMA_BASE_URL`: Ollama server URL (default: http://localhost:11434)
+- `OLLAMA_TIMEOUT`: Request timeout in seconds (default: 300)
+
+**Application Configuration:**
+- `APP_NAME`: Application name (default: "Local LLM Platform")
+- `APP_VERSION`: Version number (default: "1.0.0")
+- `DEBUG`: Enable debug mode and auto-reload (default: False)
+- `LOG_LEVEL`: Logging level - DEBUG, INFO, WARNING, ERROR (default: INFO)
+
+**Server Configuration:**
+- `HOST`: Backend server host (default: localhost, use 0.0.0.0 for external access)
 - `PORT`: Backend server port (default: 8000)
-- `HOST`: Backend server host (default: localhost)
-- `DEBUG`: Enable debug mode (default: False)
-- `LOG_LEVEL`: Logging level (default: INFO)
+
+**Performance Settings:**
+- `MAX_CONCURRENT_REQUESTS`: Max simultaneous requests (default: 10)
+- `REQUEST_TIMEOUT`: Request timeout in seconds (default: 300)
+- `MAX_PROMPT_SIZE_MB`: Maximum prompt size in MB (default: 10)
+
+**RAG Configuration:**
+- `EMBEDDING_MODEL`: Model for embeddings (default: nomic-embed-text-v1.5)
+- `CHUNK_SIZE`: Text chunk size in tokens (default: 512)
+- `CHUNK_OVERLAP`: Overlap between chunks (default: 100)
+- `VECTOR_STORE_PATH`: Vector database path (default: ./data/vector_store)
+- `KEYWORD_INDEX_PATH`: Keyword index path (default: ./data/keyword_index)
+- `SEMANTIC_WEIGHT`: Weight for semantic search (default: 0.65)
+- `LEXICAL_WEIGHT`: Weight for keyword search (default: 0.35)
+
+See `.env.example` for a complete list with all available options.
 
 ## Dependencies
 
