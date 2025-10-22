@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     
     # Server Configuration
     host: str = "localhost"
-    port: int = 8001
+    port: int = 8000
     
     # Performance Settings
     max_concurrent_requests: int = 10
