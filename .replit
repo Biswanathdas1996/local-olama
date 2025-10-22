@@ -58,3 +58,7 @@ exposeLocalhost = true
 [[ports]]
 localPort = 35643
 externalPort = 3000
+
+[deployment]
+deploymentTarget = "vm"
+run = ["bash", "-c", "python main.py & cd frontend && npm run dev"]
