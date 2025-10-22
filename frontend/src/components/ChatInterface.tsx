@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { FiSend, FiTrash2, FiSettings, FiX } from 'react-icons/fi';
+import { FiSend, FiTrash2, FiSettings } from 'react-icons/fi';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useGeneration } from '../hooks/useGeneration';
 import { useModels } from '../hooks/useModels';
 import { apiService } from '../services/api';
+import { Modal } from './Modal';
 import type { GenerationOptions, IndexInfo } from '../types/api';
 
 const CodeBlock = SyntaxHighlighter as any;
@@ -35,7 +36,7 @@ export function ChatInterface() {
     if (models.length > 0 && !selectedModel) {
       setSelectedModel(models[0].name);
     }
-  }, [models, selectedModel]);
+  }, [models, selectedModel]); 
 
   useEffect(() => {
     const fetchIndices = async () => {
@@ -85,7 +86,7 @@ export function ChatInterface() {
   };
 
   return (
-    <div className="bg-white rounded-lg sm:rounded-xl md:rounded-2xl shadow-lg border border-gray-200 flex flex-col h-[calc(100vh-12rem)] sm:h-[calc(100vh-14rem)]">
+    <div className="bg-white rounded-lg sm:rounded-xl md:rounded-2xl shadow-lg border border-gray-200 flex flex-col h-[calc(100vh-5rem)] sm:h-[calc(100vh-8rem)]">
       {/* Header */}
       <div className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-gray-50 to-white rounded-t-lg sm:rounded-t-xl md:rounded-t-2xl">
         <div className="flex items-center space-x-1.5 sm:space-x-2 min-w-0 flex-1">
@@ -128,167 +129,221 @@ export function ChatInterface() {
         </button>
       </div>
 
-      {/* Settings Panel */}
-      {showSettings && (
-        <div className="px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-b border-gray-200">
-          <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-            <h3 className="text-xs font-semibold text-gray-900">Settings</h3>
+      {/* Settings Modal */}
+      <Modal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        title="⚙️ Chat Settings"
+        maxWidth="3xl"
+      >
+        <div className="space-y-6">
+          {/* Generation Parameters */}
+          <div>
+            <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+              <span className="mr-2">🎛️</span>
+              Generation Parameters
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Max Tokens
+                </label>
+                <input
+                  type="number"
+                  value={options.max_tokens}
+                  onChange={(e) => setOptions({ ...options, max_tokens: parseInt(e.target.value) })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  min="1"
+                  max="100000"
+                />
+                <p className="mt-1 text-xs text-gray-500">Maximum number of tokens to generate</p>
+              </div>
+              
+              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Temperature
+                </label>
+                <input
+                  type="number"
+                  value={options.temperature}
+                  onChange={(e) => setOptions({ ...options, temperature: parseFloat(e.target.value) })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  min="0"
+                  max="2"
+                  step="0.1"
+                />
+                <p className="mt-1 text-xs text-gray-500">Controls randomness (0 = focused, 2 = creative)</p>
+              </div>
+              
+              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Top P
+                </label>
+                <input
+                  type="number"
+                  value={options.top_p}
+                  onChange={(e) => setOptions({ ...options, top_p: parseFloat(e.target.value) })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                />
+                <p className="mt-1 text-xs text-gray-500">Nucleus sampling threshold</p>
+              </div>
+              
+              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Top K
+                </label>
+                <input
+                  type="number"
+                  value={options.top_k}
+                  onChange={(e) => setOptions({ ...options, top_k: parseInt(e.target.value) })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  min="1"
+                  max="100"
+                />
+                <p className="mt-1 text-xs text-gray-500">Limits the next token selection</p>
+              </div>
+              
+              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Repeat Penalty
+                </label>
+                <input
+                  type="number"
+                  value={options.repeat_penalty}
+                  onChange={(e) => setOptions({ ...options, repeat_penalty: parseFloat(e.target.value) })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  min="0"
+                  max="2"
+                  step="0.1"
+                />
+                <p className="mt-1 text-xs text-gray-500">Penalizes repetition in output</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Output Format and Template */}
+          <div>
+            <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+              <span className="mr-2">📄</span>
+              Output Configuration
+            </h4>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Output Format
+                </label>
+                <select
+                  value={options.output_format || 'TEXT'}
+                  onChange={(e) => setOptions({ ...options, output_format: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm font-medium transition-all hover:border-gray-400"
+                >
+                  <option value="TEXT">Text (Default)</option>
+                  <option value="JSON">JSON</option>
+                  <option value="CSV">CSV</option>
+                  <option value="PDF">PDF</option>
+                  <option value="DOCX">DOCX</option>
+                  <option value="PPT">PPT</option>
+                </select>
+                <p className="mt-2 text-xs text-gray-500">
+                  Select the desired output format for responses
+                </p>
+              </div>
+              
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Output Template
+                </label>
+                <textarea
+                  value={options.output_template || ''}
+                  onChange={(e) => setOptions({ ...options, output_template: e.target.value })}
+                  placeholder="Enter template structure (optional)&#10;Example: &#10;{&#10;  &quot;title&quot;: &quot;&quot;,&#10;  &quot;summary&quot;: &quot;&quot;&#10;}"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-sm font-mono"
+                  rows={4}
+                />
+                <p className="mt-2 text-xs text-gray-500">
+                  Provide a template to structure the output
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* RAG Index Selection */}
+          <div>
+            <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+              <span className="mr-2">📚</span>
+              Search Indices (Optional)
+            </h4>
+            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              {loadingIndices ? (
+                <div className="text-sm text-gray-500 flex items-center justify-center py-4">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-2"></div>
+                  Loading indices...
+                </div>
+              ) : availableIndices.length === 0 ? (
+                <div className="text-sm text-gray-500 text-center py-4">
+                  No indices available. Upload documents to create indices.
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Select indices to search through your documents for relevant context
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {availableIndices.map((index) => (
+                      <button
+                        key={index.name}
+                        onClick={() => toggleIndexSelection(index.name)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                          selectedIndices.includes(index.name)
+                            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md hover:shadow-lg'
+                            : 'bg-white border-2 border-gray-300 text-gray-700 hover:border-blue-400 hover:bg-blue-50'
+                        }`}
+                      >
+                        {index.name} <span className="text-xs opacity-75">({index.document_count})</span>
+                      </button>
+                    ))}
+                  </div>
+                  {selectedIndices.length > 0 && (
+                    <div className="mt-3 p-3 text-sm text-blue-700 font-medium bg-blue-100 border border-blue-200 rounded-lg">
+                      ✓ {selectedIndices.length} index{selectedIndices.length > 1 ? 'es' : ''} selected
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+            <button
+              onClick={() => {
+                setOptions({
+                  max_tokens: 2000,
+                  temperature: 0.7,
+                  top_p: 0.9,
+                  top_k: 40,
+                  repeat_penalty: 1.1,
+                  output_format: 'TEXT',
+                  output_template: '',
+                });
+                setSelectedIndices([]);
+              }}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Reset to Defaults
+            </button>
             <button
               onClick={() => setShowSettings(false)}
-              className="p-1 hover:bg-white/50 rounded transition-colors"
-              aria-label="Close settings"
+              className="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg hover:from-blue-700 hover:to-indigo-700 shadow-md transition-all"
             >
-              <FiX className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-500" />
+              Apply Settings
             </button>
           </div>
-          
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1.5 sm:gap-2 mb-2 sm:mb-3">
-            <div className="bg-white rounded-md sm:rounded-lg p-1.5 sm:p-2 shadow-sm">
-              <label className="block text-xs font-medium text-gray-700 mb-1 truncate">
-                Max Tokens
-              </label>
-              <input
-                type="number"
-                value={options.max_tokens}
-                onChange={(e) => setOptions({ ...options, max_tokens: parseInt(e.target.value) })}
-                className="w-full px-1.5 sm:px-2 py-1 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                min="1"
-                max="100000"
-              />
-            </div>
-            <div className="bg-white rounded-md sm:rounded-lg p-1.5 sm:p-2 shadow-sm">
-              <label className="block text-xs font-medium text-gray-700 mb-1 truncate">
-                Temperature
-              </label>
-              <input
-                type="number"
-                value={options.temperature}
-                onChange={(e) => setOptions({ ...options, temperature: parseFloat(e.target.value) })}
-                className="w-full px-1.5 sm:px-2 py-1 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                min="0"
-                max="2"
-                step="0.1"
-              />
-            </div>
-            <div className="bg-white rounded-md sm:rounded-lg p-1.5 sm:p-2 shadow-sm">
-              <label className="block text-xs font-medium text-gray-700 mb-1 truncate">
-                Top P
-              </label>
-              <input
-                type="number"
-                value={options.top_p}
-                onChange={(e) => setOptions({ ...options, top_p: parseFloat(e.target.value) })}
-                className="w-full px-1.5 sm:px-2 py-1 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                min="0"
-                max="1"
-                step="0.1"
-              />
-            </div>
-            <div className="bg-white rounded-md sm:rounded-lg p-1.5 sm:p-2 shadow-sm">
-              <label className="block text-xs font-medium text-gray-700 mb-1 truncate">
-                Top K
-              </label>
-              <input
-                type="number"
-                value={options.top_k}
-                onChange={(e) => setOptions({ ...options, top_k: parseInt(e.target.value) })}
-                className="w-full px-1.5 sm:px-2 py-1 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                min="1"
-                max="100"
-              />
-            </div>
-            <div className="bg-white rounded-md sm:rounded-lg p-1.5 sm:p-2 shadow-sm col-span-2 sm:col-span-1">
-              <label className="block text-xs font-medium text-gray-700 mb-1 truncate">
-                Repeat Penalty
-              </label>
-              <input
-                type="number"
-                value={options.repeat_penalty}
-                onChange={(e) => setOptions({ ...options, repeat_penalty: parseFloat(e.target.value) })}
-                className="w-full px-1.5 sm:px-2 py-1 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                min="0"
-                max="2"
-                step="0.1"
-              />
-            </div>
-          </div>
-          
-          {/* Output Format and Template Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 mb-2 sm:mb-3">
-            <div className="bg-white rounded-md sm:rounded-lg p-2 sm:p-2.5 shadow-sm">
-              <label className="block text-xs font-semibold text-gray-900 mb-1.5 sm:mb-2">
-                📄 Output Format
-              </label>
-              <select
-                value={options.output_format || 'TEXT'}
-                onChange={(e) => setOptions({ ...options, output_format: e.target.value })}
-                className="w-full px-2 sm:px-3 py-1.5 border border-gray-300 rounded-md sm:rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-xs sm:text-sm font-medium transition-all hover:border-gray-400"
-              >
-                <option value="TEXT">Text (Default)</option>
-                <option value="JSON">JSON</option>
-                <option value="CSV">CSV</option>
-                <option value="PDF">PDF</option>
-                <option value="DOCX">DOCX</option>
-                <option value="PPT">PPT</option>
-              </select>
-              <p className="mt-1 text-xs text-gray-500">
-                Select the desired output format
-              </p>
-            </div>
-            
-            <div className="bg-white rounded-md sm:rounded-lg p-2 sm:p-2.5 shadow-sm">
-              <label className="block text-xs font-semibold text-gray-900 mb-1.5 sm:mb-2">
-                📋 Output Template
-              </label>
-              <textarea
-                value={options.output_template || ''}
-                onChange={(e) => setOptions({ ...options, output_template: e.target.value })}
-                placeholder="Enter template structure (optional)&#10;Example: &#10;{&#10;  &quot;title&quot;: &quot;&quot;,&#10;  &quot;summary&quot;: &quot;&quot;&#10;}"
-                className="w-full px-2 sm:px-3 py-1.5 border border-gray-300 rounded-md sm:rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-xs sm:text-sm font-mono"
-                rows={3}
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                Provide a template to structure the output
-              </p>
-            </div>
-          </div>
-          
-          {/* RAG Index Selection */}
-          <div className="bg-white rounded-md sm:rounded-lg p-2 sm:p-2.5 shadow-sm">
-            <label className="block text-xs font-semibold text-gray-900 mb-1.5 sm:mb-2">
-              📚 Search Indices (Optional)
-            </label>
-            {loadingIndices ? (
-              <div className="text-xs text-gray-500">Loading...</div>
-            ) : availableIndices.length === 0 ? (
-              <div className="text-xs text-gray-500">No indices available</div>
-            ) : (
-              <div className="flex flex-wrap gap-1 sm:gap-1.5">
-                {availableIndices.map((index) => (
-                  <button
-                    key={index.name}
-                    onClick={() => toggleIndexSelection(index.name)}
-                    className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-xs font-medium transition-all ${
-                      selectedIndices.includes(index.name)
-                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm'
-                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    <span className="truncate max-w-[120px] sm:max-w-none inline-block">
-                      {index.name} ({index.document_count})
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-            {selectedIndices.length > 0 && (
-              <div className="mt-1.5 sm:mt-2 text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded">
-                ✓ {selectedIndices.length} index(es) selected
-              </div>
-            )}
-          </div>
         </div>
-      )}
+      </Modal>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-2 sm:p-3 md:p-4 space-y-2 sm:space-y-3 bg-gradient-to-b from-gray-50/50 to-white">
