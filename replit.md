@@ -24,6 +24,10 @@ This is a full-stack Local LLM Platform application designed to work with Ollama
 - **Framework**: React 18 with TypeScript
 - **Build Tool**: Vite
 - **Styling**: Tailwind CSS
+- **Replit Configuration**: 
+  - Host: 0.0.0.0 (required for Replit proxy)
+  - allowedHosts: true (critical for Replit proxy access)
+  - HMR clientPort: 443 (for hot module replacement through proxy)
 - **Features**:
   - Chat interface for LLM interactions
   - Document upload and management
