@@ -65,6 +65,7 @@ env/
 .venv
 env.bak/
 venv.bak/
+.pythonlibs/
 
 # Node.js / Frontend
 node_modules/

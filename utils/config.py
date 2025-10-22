@@ -21,8 +21,8 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     
     # Server Configuration
-    host: str = "0.0.0.0"
-    port: int = 8000
+    host: str = "localhost"
+    port: int = 8001
     
     # Performance Settings
     max_concurrent_requests: int = 10
