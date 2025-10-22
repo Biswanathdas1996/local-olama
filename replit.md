@@ -23,16 +23,18 @@ This is a full-stack Local LLM Platform application designed to work with Ollama
 ### Frontend (Port 5000)
 - **Framework**: React 18 with TypeScript
 - **Build Tool**: Vite
-- **Styling**: Tailwind CSS
+- **Routing**: React Router for multi-page navigation
+- **Styling**: Tailwind CSS with modern gradients and shadows
 - **Replit Configuration**: 
   - Host: 0.0.0.0 (required for Replit proxy)
   - allowedHosts: true (critical for Replit proxy access)
   - HMR clientPort: 443 (for hot module replacement through proxy)
 - **Features**:
-  - Chat interface for LLM interactions
-  - Document upload and management
-  - Model selection and configuration
-  - Real-time status monitoring
+  - Modern multi-page interface with sidebar navigation
+  - Chat page: LLM interactions with streaming and RAG support
+  - Documents page (BYOD): Upload and search documents using hybrid retrieval
+  - Models page: Download and manage LLM models
+  - Real-time status monitoring and health indicators
 
 ## Development Setup
 
@@ -104,11 +106,14 @@ See `.env.example` for a complete list with all available options.
 
 ### Node.js (Frontend)
 - React, React DOM - UI framework
+- React Router - Multi-page routing
 - Vite - Build tool
 - TypeScript - Type safety
 - Axios - HTTP client
-- Tailwind CSS - Styling
+- Tailwind CSS - Modern styling with gradients
 - React Markdown - Markdown rendering
+- React Icons - Icon library
+- React Syntax Highlighter - Code highlighting
 
 ## Project Structure
 
@@ -133,13 +138,30 @@ See `.env.example` for a complete list with all available options.
 │   └── logger.py        # Logging setup
 └── frontend/            # React application
     ├── src/
-    │   ├── components/  # React components
+    │   ├── components/  # React components (ChatInterface, DocumentManager, ModelManager)
+    │   ├── pages/       # Page components (ChatPage, DocumentsPage, ModelsPage)
+    │   ├── hooks/       # Custom React hooks
     │   ├── services/    # API client
     │   └── types/       # TypeScript types
     └── vite.config.ts   # Vite configuration
 ```
 
 ## Recent Changes
+
+### 2025-10-22: Modern Multi-Page UI Update
+- Implemented React Router for multi-page navigation
+- Created modern sidebar navigation with gradient active states
+- Separated interface into three distinct pages:
+  - Chat: LLM interaction with advanced settings and RAG support
+  - Documents (BYOD): Document upload and hybrid search
+  - Models: Model download and management
+- Modernized all components with:
+  - Gradient backgrounds and buttons
+  - Enhanced shadows and rounded corners
+  - Improved empty states and loading indicators
+  - Better color scheme with blue/indigo gradients
+- Updated Layout component with sticky header and responsive sidebar
+- Enhanced user experience with smooth transitions and hover effects
 
 ### 2025-10-22: Initial Replit Setup
 - Installed Python 3.11 and Node.js 20
