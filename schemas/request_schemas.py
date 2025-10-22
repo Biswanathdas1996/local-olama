@@ -57,6 +57,14 @@ class GenerateRequest(BaseModel):
         default=None,
         description="Optional list of index names to search for relevant context (enables RAG)"
     )
+    output_format: Optional[str] = Field(
+        default="TEXT",
+        description="Output format: TEXT (default), JSON, CSV, PDF, DOCX, or PPT"
+    )
+    output_template: Optional[str] = Field(
+        default=None,
+        description="Optional template to structure the output"
+    )
     
     @field_validator('prompt')
     @classmethod
