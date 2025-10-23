@@ -57,6 +57,12 @@ class ApiService {
     return response.data;
   }
 
+  // Server Info
+  async getServerInfo(): Promise<{ hostname: string; ipv4: string; port: number; url: string }> {
+    const response = await this.client.get('/server-info');
+    return response.data;
+  }
+
   // Models Management
   async listModels(): Promise<ModelsListResponse> {
     const response = await this.client.get<ModelsListResponse>('/models');

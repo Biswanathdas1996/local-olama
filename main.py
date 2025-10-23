@@ -200,6 +200,51 @@ async def health_check() -> HealthResponse:
     )
 
 
+# Server info endpoint
+@app.get(
+    "/server-info",
+    tags=["Root"],
+    summary="Server Information",
+    description="Get server network information including IPv4 address."
+)
+async def server_info():
+    """Get server network information."""
+    import socket
+    
+    try:
+        # Get the local IPv4 address
+        hostname = socket.gethostname()
+        ipv4_address = socket.gethostbyname(hostname)
+        
+        # Try to get the actual network IP if on local network
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            # Doesn't need to be reachable, just used to get the local IP
+            s.connect(('10.255.255.255', 1))
+            ipv4_address = s.getsockname()[0]
+        except Exception:
+            pass
+        finally:
+            s.close()
+        
+        server_url = f"http://{ipv4_address}:{settings.port}"
+        
+        return {
+            "hostname": hostname,
+            "ipv4": ipv4_address,
+            "port": settings.port,
+            "url": server_url
+        }
+    except Exception as e:
+        logger.error("failed_to_get_server_info", error=str(e))
+        return {
+            "hostname": "localhost",
+            "ipv4": "127.0.0.1",
+            "port": settings.port,
+            "url": f"http://127.0.0.1:{settings.port}"
+        }
+
+
 # Root endpoint
 @app.get(
     "/",
