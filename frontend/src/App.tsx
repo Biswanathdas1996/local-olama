@@ -4,6 +4,7 @@ import { ChatPage } from './pages/ChatPage';
 import { DocumentsPage } from './pages/DocumentsPage';
 import { ModelsPage } from './pages/ModelsPage';
 import { TemplatesPage } from './pages/TemplatesPage';
+import { SavedTemplatesPage } from './pages/SavedTemplatesPage';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Route path="/documents" element={<DocumentsPage />} />
           <Route path="/models" element={<ModelsPage />} />
           <Route path="/templates" element={<TemplatesPage />} />
+          <Route path="/saved-templates" element={<SavedTemplatesPage />} />
         </Routes>
       </Layout>
     </Router>

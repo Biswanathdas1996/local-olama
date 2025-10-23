@@ -1,18 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
-import { FiPlus, FiPlay, FiSave, FiTrash2, FiLoader, FiEye, FiEdit2, FiCheck, FiX, FiUpload, FiDownload, FiList } from 'react-icons/fi';
+import { FiPlus, FiPlay, FiSave, FiTrash2, FiLoader, FiEye, FiEdit2, FiCheck, FiUpload, FiDownload, FiFileText, FiSettings, FiGrid, FiMaximize2, FiMinimize2, FiBookmark } from 'react-icons/fi';
 import { apiService } from '../services/api';
 import type { IndexInfo } from '../types/api';
 import { HtmlPreviewModal } from '../components/HtmlPreviewModal';
 import { templateStorage, type SavedTemplate, type TemplateBox } from '../utils/templateStorage';
+import html2pdf from 'html2pdf.js';
+import { useNavigate } from 'react-router-dom';
 
 const sizeClasses = {
-  small: 'col-span-1 row-span-1',
-  medium: 'col-span-2 row-span-1',
-  large: 'col-span-2 row-span-2',
-  xlarge: 'col-span-3 row-span-2',
+  small: 'col-span-1 row-span-1 min-h-[200px]',
+  medium: 'col-span-1 md:col-span-2 row-span-1 min-h-[200px]',
+  large: 'col-span-1 md:col-span-2 row-span-2 min-h-[400px]',
+  xlarge: 'col-span-1 md:col-span-2 lg:col-span-3 row-span-2 min-h-[400px]',
 };
 
 export function TemplatesPage() {
+  const navigate = useNavigate();
   const [boxes, setBoxes] = useState<TemplateBox[]>([
     { id: '1', prompt: '', response: '', size: 'medium', isGenerating: false },
   ]);
@@ -24,9 +27,10 @@ export function TemplatesPage() {
   const [templateName, setTemplateName] = useState('Untitled Template');
   const [currentTemplateId, setCurrentTemplateId] = useState<string | null>(null);
   const [savedTemplates, setSavedTemplates] = useState<SavedTemplate[]>([]);
-  const [showTemplateList, setShowTemplateList] = useState(false);
   const [previewContent, setPreviewContent] = useState<{ content: string; title: string } | null>(null);
   const [editingBoxId, setEditingBoxId] = useState<string | null>(null);
+  const [showConfig, setShowConfig] = useState(false);
+  const [compactMode, setCompactMode] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -197,6 +201,148 @@ export function TemplatesPage() {
     URL.revokeObjectURL(url);
   };
 
+  const exportToPDF = async () => {
+    // Create a visible container for PDF export with exact positioning
+    const pdfContainer = document.createElement('div');
+    pdfContainer.style.position = 'fixed';
+    pdfContainer.style.top = '0';
+    pdfContainer.style.left = '0';
+    pdfContainer.style.width = '793px'; // A4 width in pixels at 96 DPI
+    pdfContainer.style.padding = '40px';
+    pdfContainer.style.backgroundColor = '#ffffff';
+    pdfContainer.style.fontFamily = 'Arial, sans-serif';
+    pdfContainer.style.zIndex = '-1';
+    pdfContainer.style.opacity = '0';
+    
+    // Add template title
+    const titleDiv = document.createElement('div');
+    titleDiv.style.marginBottom = '20px';
+    titleDiv.style.paddingBottom = '10px';
+    titleDiv.style.borderBottom = '2px solid #3B82F6';
+    titleDiv.innerHTML = `
+      <h1 style="font-size: 24px; font-weight: bold; color: #1F2937; margin: 0 0 8px 0;">${templateName}</h1>
+      <div style="font-size: 12px; color: #6B7280;">
+        <span>Model: ${selectedModel}</span>
+        ${selectedIndices.length > 0 ? `<span style="margin-left: 16px;">Indices: ${selectedIndices.join(', ')}</span>` : ''}
+        <span style="margin-left: 16px;">Generated: ${new Date().toLocaleString()}</span>
+      </div>
+    `;
+    pdfContainer.appendChild(titleDiv);
+
+    // Calculate grid layout based on box sizes
+    const gridContainer = document.createElement('div');
+    gridContainer.style.display = 'grid';
+    gridContainer.style.gridTemplateColumns = 'repeat(3, 1fr)';
+    gridContainer.style.gap = '10px';
+    gridContainer.style.width = '100%';
+
+    // Add boxes with exact positioning
+    boxes.forEach((box) => {
+      const boxDiv = document.createElement('div');
+      
+      // Apply size classes similar to the UI
+      const sizeStyles = {
+        small: { gridColumn: 'span 1', gridRow: 'span 1', minHeight: '150px' },
+        medium: { gridColumn: 'span 2', gridRow: 'span 1', minHeight: '150px' },
+        large: { gridColumn: 'span 2', gridRow: 'span 2', minHeight: '300px' },
+        xlarge: { gridColumn: 'span 3', gridRow: 'span 2', minHeight: '300px' },
+      };
+
+      const style = sizeStyles[box.size];
+      boxDiv.style.gridColumn = style.gridColumn;
+      boxDiv.style.gridRow = style.gridRow;
+      boxDiv.style.minHeight = style.minHeight;
+      boxDiv.style.border = '2px solid #E5E7EB';
+      boxDiv.style.borderRadius = '8px';
+      boxDiv.style.padding = '12px';
+      boxDiv.style.backgroundColor = '#F9FAFB';
+      boxDiv.style.display = 'flex';
+      boxDiv.style.flexDirection = 'column';
+      boxDiv.style.pageBreakInside = 'avoid';
+
+      // Box header with size indicator
+      const headerDiv = document.createElement('div');
+      headerDiv.style.marginBottom = '8px';
+      headerDiv.style.paddingBottom = '6px';
+      headerDiv.style.borderBottom = '1px solid #D1D5DB';
+      headerDiv.innerHTML = `
+        <div style="font-size: 10px; color: #6B7280; font-weight: 600; text-transform: uppercase;">
+          ${box.size.toUpperCase()} BOX
+        </div>
+      `;
+      boxDiv.appendChild(headerDiv);
+
+      // Prompt section
+      const promptDiv = document.createElement('div');
+      promptDiv.style.marginBottom = '8px';
+      promptDiv.innerHTML = `
+        <div style="font-size: 10px; font-weight: 600; color: #374151; margin-bottom: 4px;">PROMPT:</div>
+        <div style="font-size: 11px; color: #1F2937; padding: 6px; background-color: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word;">
+          ${box.prompt || '<em style="color: #9CA3AF;">No prompt</em>'}
+        </div>
+      `;
+      boxDiv.appendChild(promptDiv);
+
+      // Response section
+      const responseDiv = document.createElement('div');
+      responseDiv.style.flex = '1';
+      responseDiv.style.display = 'flex';
+      responseDiv.style.flexDirection = 'column';
+      responseDiv.innerHTML = `
+        <div style="font-size: 10px; font-weight: 600; color: #374151; margin-bottom: 4px;">RESPONSE:</div>
+        <div style="flex: 1; font-size: 11px; color: #1F2937; padding: 6px; background-color: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; overflow: hidden;">
+          ${box.response || '<em style="color: #9CA3AF;">No response yet</em>'}
+        </div>
+      `;
+      boxDiv.appendChild(responseDiv);
+
+      gridContainer.appendChild(boxDiv);
+    });
+
+    pdfContainer.appendChild(gridContainer);
+    document.body.appendChild(pdfContainer);
+
+    try {
+      // Wait for DOM to render
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Configure PDF options for exact positioning
+      const options = {
+        margin: [10, 10, 10, 10] as [number, number, number, number],
+        filename: `${templateName.replace(/\s+/g, '_')}.pdf`,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: { 
+          scale: 2,
+          useCORS: true,
+          letterRendering: true,
+          logging: true,
+          backgroundColor: '#ffffff',
+        },
+        jsPDF: { 
+          unit: 'mm', 
+          format: 'a4', 
+          orientation: 'portrait' as const,
+          compress: true,
+        },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      };
+
+      // Generate PDF
+      await html2pdf().set(options).from(pdfContainer).save();
+      
+      // Clean up
+      document.body.removeChild(pdfContainer);
+      
+      console.log('PDF exported successfully');
+    } catch (error) {
+      console.error('Failed to export PDF:', error);
+      if (document.body.contains(pdfContainer)) {
+        document.body.removeChild(pdfContainer);
+      }
+      alert('Failed to export PDF. Please try again.');
+    }
+  };
+
   // New template management functions
   const saveCurrentTemplate = () => {
     const template = templateStorage.saveTemplate({
@@ -226,7 +372,6 @@ export function TemplatesPage() {
     setSelectedModel(template.model);
     setCurrentTemplateId(template.id);
     templateStorage.setActiveTemplateId(template.id);
-    setShowTemplateList(false);
   };
 
   const createNewTemplate = () => {
@@ -235,16 +380,6 @@ export function TemplatesPage() {
     setSelectedIndices([]);
     setCurrentTemplateId(null);
     templateStorage.setActiveTemplateId(null);
-  };
-
-  const deleteTemplate = (templateId: string) => {
-    if (confirm('Are you sure you want to delete this template?')) {
-      templateStorage.deleteTemplate(templateId);
-      loadSavedTemplates();
-      if (currentTemplateId === templateId) {
-        createNewTemplate();
-      }
-    }
   };
 
   const handleImportTemplate = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -277,7 +412,7 @@ export function TemplatesPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="h-full flex flex-col space-y-3 p-4">
       {/* Hidden file input for import */}
       <input
         ref={fileInputRef}
@@ -297,366 +432,350 @@ export function TemplatesPage() {
         />
       )}
 
-      {/* Header */}
-      <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="flex-1">
+      {/* Compact Header Bar */}
+      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-lg shadow-xl p-3">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          {/* Template Name */}
+          <div className="flex items-center gap-3 flex-1 min-w-[200px]">
             <input
               type="text"
               value={templateName}
               onChange={(e) => setTemplateName(e.target.value)}
-              className="text-2xl font-bold text-gray-900 bg-transparent border-b-2 border-transparent hover:border-blue-300 focus:border-blue-500 focus:outline-none transition-colors w-full"
+              className="text-lg font-bold bg-white/20 text-white placeholder-white/70 border-2 border-white/30 hover:border-white/50 focus:border-white focus:outline-none transition-all px-3 py-1.5 rounded-lg backdrop-blur-sm"
               placeholder="Template Name"
             />
+            {currentTemplateId && (
+              <span className="px-2 py-1 bg-green-500/30 text-white text-xs font-semibold rounded-full border border-green-300/50 flex items-center gap-1">
+                <FiCheck className="w-3 h-3" />
+                Saved
+              </span>
+            )}
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          {/* Quick Action Buttons */}
+          <div className="flex items-center gap-2">
             <button
               onClick={createNewTemplate}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center space-x-2 text-sm"
+              className="px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium backdrop-blur-sm border border-white/30"
               title="New Template"
             >
               <FiPlus className="w-4 h-4" />
-              <span>New</span>
+              <span className="hidden sm:inline">New</span>
             </button>
             <button
-              onClick={() => setShowTemplateList(!showTemplateList)}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2 text-sm"
+              onClick={() => navigate('/saved-templates')}
+              className="px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium backdrop-blur-sm border border-white/30"
               title="View Saved Templates"
             >
-              <FiList className="w-4 h-4" />
-              <span>Templates ({savedTemplates.length})</span>
+              <FiBookmark className="w-4 h-4" />
+              <span className="hidden sm:inline">Saved</span>
+              <span className="px-1.5 py-0.5 bg-white/30 rounded text-xs">{savedTemplates.length}</span>
             </button>
             <button
               onClick={saveCurrentTemplate}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 text-sm"
-              title="Save Current Template"
+              className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium shadow-lg"
+              title="Save"
             >
               <FiSave className="w-4 h-4" />
-              <span>Save</span>
+              <span className="hidden sm:inline">Save</span>
             </button>
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 text-sm"
-              title="Import Template"
+              className="px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium backdrop-blur-sm border border-white/30"
+              title="Import"
             >
               <FiUpload className="w-4 h-4" />
-              <span>Import</span>
             </button>
             <button
               onClick={exportTemplate}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2 text-sm"
-              title="Export Template"
+              className="px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium backdrop-blur-sm border border-white/30"
+              title="Export JSON"
             >
               <FiDownload className="w-4 h-4" />
-              <span>Export</span>
             </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Saved Templates List */}
-      {showTemplateList && (
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Saved Templates</h3>
             <button
-              onClick={() => setShowTemplateList(false)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              onClick={exportToPDF}
+              className="px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium backdrop-blur-sm border border-white/30"
+              title="Export PDF"
             >
-              <FiX className="w-5 h-5 text-gray-600" />
+              <FiFileText className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setShowConfig(!showConfig)}
+              className={`px-3 py-1.5 ${showConfig ? 'bg-white/30' : 'bg-white/20'} hover:bg-white/30 text-white rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium backdrop-blur-sm border border-white/30`}
+              title="Configuration"
+            >
+              <FiSettings className="w-4 h-4" />
             </button>
           </div>
-          
-          {savedTemplates.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">No saved templates yet</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {savedTemplates.map((template) => (
-                <div
-                  key={template.id}
-                  className={`p-4 border-2 rounded-lg transition-all cursor-pointer ${
-                    currentTemplateId === template.id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-blue-300 bg-white'
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1" onClick={() => loadTemplate(template)}>
-                      <h4 className="font-semibold text-gray-900 truncate">{template.name}</h4>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {template.boxes.length} boxes • {template.model}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        Updated: {new Date(template.updatedAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteTemplate(template.id);
-                      }}
-                      className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors ml-2"
-                      title="Delete template"
-                    >
-                      <FiTrash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  {currentTemplateId === template.id && (
-                    <div className="mt-2 flex items-center text-xs text-blue-600">
-                      <FiCheck className="w-3 h-3 mr-1" />
-                      <span>Currently Active</span>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Add Box Buttons */}
-      <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Add Template Box</h3>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => addBox('small')}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 text-sm"
-          >
-            <FiPlus className="w-4 h-4" />
-            <span>Small</span>
-          </button>
-          <button
-            onClick={() => addBox('medium')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 text-sm"
-          >
-            <FiPlus className="w-4 h-4" />
-            <span>Medium</span>
-          </button>
-          <button
-            onClick={() => addBox('large')}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2 text-sm"
-          >
-            <FiPlus className="w-4 h-4" />
-            <span>Large</span>
-          </button>
-          <button
-            onClick={() => addBox('xlarge')}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2 text-sm"
-          >
-            <FiPlus className="w-4 h-4" />
-            <span>XLarge</span>
-          </button>
         </div>
       </div>
 
-      {/* Configuration Panel */}
-      <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Configuration</h3>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Model Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Model
-            </label>
-            <select
-              value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              {models.map((model) => (
-                <option key={model} value={model}>
-                  {model}
-                </option>
-              ))}
-            </select>
+      {/* Configuration Panel - Collapsible */}
+      {showConfig && (
+        <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden animate-slideDown">
+          <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
+            <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+              <FiSettings className="w-4 h-4" />
+              Configuration
+            </h3>
           </div>
-
-          {/* Indices Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Knowledge Indices (Optional)
-            </label>
-            <div className="border border-gray-300 rounded-lg p-3 max-h-32 overflow-y-auto">
-              {availableIndices.length === 0 ? (
-                <p className="text-sm text-gray-500">No indices available</p>
-              ) : (
-                <div className="space-y-2">
-                  {availableIndices.map((index) => (
-                    <label key={index.name} className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selectedIndices.includes(index.name)}
-                        onChange={() => toggleIndex(index.name)}
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-700">
-                        {index.name} ({index.document_count} docs)
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="mt-6 flex flex-wrap gap-3">
-          <button
-            onClick={generateAll}
-            disabled={isGeneratingAll}
-            className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all flex items-center space-x-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isGeneratingAll ? (
-              <>
-                <FiLoader className="w-5 h-5 animate-spin" />
-                <span>Generating...</span>
-              </>
-            ) : (
-              <>
-                <FiPlay className="w-5 h-5" />
-                <span>Generate All</span>
-              </>
-            )}
-          </button>
           
-          <button
-            onClick={clearAll}
-            className="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2 font-medium"
-          >
-            <FiTrash2 className="w-5 h-5" />
-            <span>Clear Responses</span>
-          </button>
+          <div className="p-3 grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Model Selection */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                Model
+              </label>
+              <select
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                {models.map((model) => (
+                  <option key={model} value={model}>
+                    {model}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <button
-            onClick={saveCurrentTemplate}
-            className="px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 font-medium"
-          >
-            <FiSave className="w-5 h-5" />
-            <span>Save to Storage</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Template Grid */}
-      <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Template Boxes</h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-auto">
-          {boxes.map((box) => (
-            <div
-              key={box.id}
-              className={`${sizeClasses[box.size]} bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg border-2 border-gray-200 hover:border-blue-400 transition-all p-4 flex flex-col`}
-            >
-              {/* Box Header */}
-              <div className="flex items-center justify-between mb-3">
-                <select
-                  value={box.size}
-                  onChange={(e) => updateBoxSize(box.id, e.target.value as any)}
-                  className="text-xs px-2 py-1 border border-gray-300 rounded bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="small">Small</option>
-                  <option value="medium">Medium</option>
-                  <option value="large">Large</option>
-                  <option value="xlarge">XLarge</option>
-                </select>
-                
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => generateForBox(box.id)}
-                    disabled={box.isGenerating || !box.prompt.trim()}
-                    className="p-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Generate for this box"
-                  >
-                    {box.isGenerating ? (
-                      <FiLoader className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <FiPlay className="w-4 h-4" />
-                    )}
-                  </button>
-                  <button
-                    onClick={() => removeBox(box.id)}
-                    className="p-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                    title="Remove box"
-                  >
-                    <FiTrash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Prompt Input */}
-              <div className="mb-3">
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Prompt
-                </label>
-                <textarea
-                  value={box.prompt}
-                  onChange={(e) => updateBoxPrompt(box.id, e.target.value)}
-                  placeholder="Enter your prompt here..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
-                  rows={3}
-                />
-              </div>
-
-              {/* Response Display */}
-              <div className="flex-1 overflow-hidden">
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-medium text-gray-700">
-                    Response
-                  </label>
-                  {box.response && (
-                    <div className="flex items-center space-x-1">
-                      <button
-                        onClick={() => setEditingBoxId(editingBoxId === box.id ? null : box.id)}
-                        className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                        title={editingBoxId === box.id ? "View mode" : "Edit mode"}
-                      >
-                        {editingBoxId === box.id ? (
-                          <FiEye className="w-3.5 h-3.5" />
-                        ) : (
-                          <FiEdit2 className="w-3.5 h-3.5" />
-                        )}
-                      </button>
-                      <button
-                        onClick={() => openHtmlPreview(box.id)}
-                        className="p-1 text-purple-600 hover:bg-purple-50 rounded transition-colors"
-                        title="Preview as HTML"
-                      >
-                        <FiEye className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-                {editingBoxId === box.id ? (
-                  <textarea
-                    value={box.response}
-                    onChange={(e) => updateBoxResponse(box.id, e.target.value)}
-                    className="w-full h-full border border-gray-300 rounded-lg p-3 text-sm text-gray-800 font-mono resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Response will appear here..."
-                  />
+            {/* Indices Selection */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                Knowledge Indices (Optional)
+              </label>
+              <div className="border border-gray-300 rounded-lg p-2 max-h-24 overflow-y-auto bg-gray-50">
+                {availableIndices.length === 0 ? (
+                  <p className="text-xs text-gray-500">No indices available</p>
                 ) : (
-                  <div className="h-full bg-white border border-gray-300 rounded-lg p-3 overflow-y-auto text-sm text-gray-800 whitespace-pre-wrap">
-                    {box.isGenerating ? (
-                      <div className="flex items-center justify-center h-full text-gray-500">
-                        <FiLoader className="w-6 h-6 animate-spin" />
-                      </div>
-                    ) : box.response ? (
-                      box.response
-                    ) : (
-                      <span className="text-gray-400 italic">No response yet</span>
-                    )}
+                  <div className="space-y-1.5">
+                    {availableIndices.map((index) => (
+                      <label key={index.name} className="flex items-center gap-2 cursor-pointer hover:bg-white p-1 rounded transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={selectedIndices.includes(index.name)}
+                          onChange={() => toggleIndex(index.name)}
+                          className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <span className="text-xs text-gray-700 flex-1">
+                          {index.name}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {index.document_count}
+                        </span>
+                      </label>
+                    ))}
                   </div>
                 )}
               </div>
             </div>
-          ))}
+          </div>
         </div>
+      )}
 
-        {boxes.length === 0 && (
-          <div className="text-center py-12 text-gray-500">
-            <p className="text-lg">No boxes yet. Click a button above to add one!</p>
+      {/* Quick Actions Toolbar */}
+      <div className="bg-white rounded-lg shadow-md border border-gray-200 p-2">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          {/* Add Box Buttons */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-gray-600 hidden sm:inline">Add Box:</span>
+            <button
+              onClick={() => addBox('small')}
+              className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-all flex items-center gap-1.5 text-xs font-medium shadow-sm"
+              title="Add Small Box"
+            >
+              <FiPlus className="w-3.5 h-3.5" />
+              <span>S</span>
+            </button>
+            <button
+              onClick={() => addBox('medium')}
+              className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-all flex items-center gap-1.5 text-xs font-medium shadow-sm"
+              title="Add Medium Box"
+            >
+              <FiPlus className="w-3.5 h-3.5" />
+              <span>M</span>
+            </button>
+            <button
+              onClick={() => addBox('large')}
+              className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-all flex items-center gap-1.5 text-xs font-medium shadow-sm"
+              title="Add Large Box"
+            >
+              <FiPlus className="w-3.5 h-3.5" />
+              <span>L</span>
+            </button>
+            <button
+              onClick={() => addBox('xlarge')}
+              className="px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-all flex items-center gap-1.5 text-xs font-medium shadow-sm"
+              title="Add XLarge Box"
+            >
+              <FiPlus className="w-3.5 h-3.5" />
+              <span>XL</span>
+            </button>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={generateAll}
+              disabled={isGeneratingAll}
+              className="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isGeneratingAll ? (
+                <>
+                  <FiLoader className="w-4 h-4 animate-spin" />
+                  <span>Generating...</span>
+                </>
+              ) : (
+                <>
+                  <FiPlay className="w-4 h-4" />
+                  <span>Generate All</span>
+                </>
+              )}
+            </button>
+            
+            <button
+              onClick={clearAll}
+              className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium shadow-sm"
+              title="Clear All Responses"
+            >
+              <FiTrash2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Clear</span>
+            </button>
+
+            <button
+              onClick={() => setCompactMode(!compactMode)}
+              className={`px-3 py-1.5 ${compactMode ? 'bg-gray-600' : 'bg-gray-500'} hover:bg-gray-700 text-white rounded-lg transition-all flex items-center gap-1.5 text-sm font-medium shadow-sm`}
+              title={compactMode ? "Expand View" : "Compact View"}
+            >
+              {compactMode ? <FiMaximize2 className="w-4 h-4" /> : <FiMinimize2 className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Template Grid - Scrollable */}
+      <div className="flex-1 overflow-y-auto bg-gradient-to-br from-gray-50 to-blue-50/30 rounded-lg border border-gray-200 p-3">
+        {boxes.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-gray-400">
+            <FiGrid className="w-16 h-16 mb-3 opacity-50" />
+            <p className="text-lg font-medium">No boxes yet</p>
+            <p className="text-sm">Click an "Add Box" button above to start</p>
+          </div>
+        ) : (
+          <div className={`grid ${compactMode ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'} gap-3 auto-rows-auto`}>
+            {boxes.map((box) => (
+              <div
+                key={box.id}
+                className={`${sizeClasses[box.size]} bg-white rounded-lg border-2 ${
+                  box.isGenerating ? 'border-blue-400 shadow-lg shadow-blue-100' : 'border-gray-200 hover:border-blue-300'
+                } transition-all p-3 flex flex-col group hover:shadow-xl`}
+              >
+                {/* Compact Box Header */}
+                <div className="flex items-center justify-between mb-2 pb-2 border-b border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={box.size}
+                      onChange={(e) => updateBoxSize(box.id, e.target.value as any)}
+                      className="text-xs px-2 py-1 border border-gray-200 rounded bg-gray-50 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
+                    >
+                      <option value="small">S</option>
+                      <option value="medium">M</option>
+                      <option value="large">L</option>
+                      <option value="xlarge">XL</option>
+                    </select>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded ${
+                      box.isGenerating ? 'bg-blue-100 text-blue-700' :
+                      box.response ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {box.isGenerating ? 'Generating...' : box.response ? 'Done' : 'Empty'}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center gap-1">
+                    {box.response && (
+                      <>
+                        <button
+                          onClick={() => setEditingBoxId(editingBoxId === box.id ? null : box.id)}
+                          className={`p-1 ${editingBoxId === box.id ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:bg-gray-100 hover:text-blue-600'} rounded transition-all`}
+                          title={editingBoxId === box.id ? "View" : "Edit"}
+                        >
+                          {editingBoxId === box.id ? <FiEye className="w-3.5 h-3.5" /> : <FiEdit2 className="w-3.5 h-3.5" />}
+                        </button>
+                        <button
+                          onClick={() => openHtmlPreview(box.id)}
+                          className="p-1 text-gray-400 hover:bg-purple-100 hover:text-purple-600 rounded transition-all"
+                          title="Preview"
+                        >
+                          <FiEye className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
+                    <button
+                      onClick={() => generateForBox(box.id)}
+                      disabled={box.isGenerating || !box.prompt.trim()}
+                      className="p-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="Generate"
+                    >
+                      {box.isGenerating ? (
+                        <FiLoader className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <FiPlay className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => removeBox(box.id)}
+                      className="p-1 text-gray-400 hover:bg-red-100 hover:text-red-600 rounded transition-all"
+                      title="Remove"
+                    >
+                      <FiTrash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Prompt Input - Compact */}
+                <div className="mb-2">
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    Prompt
+                  </label>
+                  <textarea
+                    value={box.prompt}
+                    onChange={(e) => updateBoxPrompt(box.id, e.target.value)}
+                    placeholder="Enter prompt..."
+                    className="w-full px-2 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-none text-xs bg-gray-50 transition-all"
+                    rows={compactMode ? 2 : 3}
+                  />
+                </div>
+
+                {/* Response Display - Compact */}
+                <div className="flex-1 flex flex-col min-h-0">
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    Response
+                  </label>
+                  {editingBoxId === box.id ? (
+                    <textarea
+                      value={box.response}
+                      onChange={(e) => updateBoxResponse(box.id, e.target.value)}
+                      className="flex-1 w-full border border-gray-200 rounded-lg p-2 text-xs text-gray-800 font-mono resize-none focus:ring-2 focus:ring-blue-400 focus:border-transparent bg-white"
+                      placeholder="Response will appear here..."
+                    />
+                  ) : (
+                    <div className="flex-1 bg-white border border-gray-200 rounded-lg p-2 overflow-y-auto text-xs text-gray-800 whitespace-pre-wrap">
+                      {box.isGenerating ? (
+                        <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                          <FiLoader className="w-6 h-6 animate-spin mb-2" />
+                          <span className="text-xs">Generating...</span>
+                        </div>
+                      ) : box.response ? (
+                        <div className="leading-relaxed">{box.response}</div>
+                      ) : (
+                        <span className="text-gray-400 italic text-xs">No response yet</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
