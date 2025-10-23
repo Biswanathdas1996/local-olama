@@ -58,6 +58,18 @@ Preferred communication style: Simple, everyday language.
 - Compact layouts with reduced padding and efficient spacing
 - Custom animations: float, glow-pulse, slide-in, shimmer
 - Responsive design optimized for mobile, tablet, and desktop
+- **Mobile Optimizations** (October 2025):
+  - Touch-friendly tap targets (minimum 44x44px for all interactive elements)
+  - Full-screen modals on mobile devices with slide-up animation
+  - Responsive tabs with horizontal scrolling and compact labels
+  - Minimum 16px font size on inputs to prevent iOS zoom
+  - Safe area padding for notched devices (iPhone X+)
+  - Optimized spacing and padding for small screens (sm: breakpoint)
+  - Active state feedback instead of hover on touch devices
+  - Smooth scrolling with webkit-overflow-scrolling
+  - Prevented horizontal scroll with overflow-x: hidden
+  - Compact button labels and icons on mobile
+  - Responsive grid layouts (single column on mobile, multi-column on larger screens)
 
 **Routing**: React Router v7 for client-side navigation with routes for Chat, Documents (BYOD), Models, Training, Templates, and Saved Templates.
 
