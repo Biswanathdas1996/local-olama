@@ -71,7 +71,7 @@ Preferred communication style: Simple, everyday language.
   - Compact button labels and icons on mobile
   - Responsive grid layouts (single column on mobile, multi-column on larger screens)
 
-**Routing**: React Router v7 for client-side navigation with routes for Chat, Documents (BYOD), Models, Training, Templates, and Saved Templates.
+**Routing**: React Router v7 for client-side navigation with routes for Chat, Documents (BYOD), Models, Training, Templates, Saved Templates, and Connect.
 
 **State Management**: React hooks-based state management with custom hooks:
 - `useGeneration`: Handles chat message state and API calls for text generation
@@ -93,6 +93,13 @@ Preferred communication style: Simple, everyday language.
   - Smooth keyboard handling (Enter to send, Shift+Enter for new line)
   - Safe-bottom padding for iOS notch devices
   - Typing indicator with bouncing dots
+- **Connect Page** (October 2025):
+  - QR code generator for easy mobile access
+  - Automatic IPv4 address detection and display
+  - One-click URL copying to clipboard
+  - Step-by-step connection instructions
+  - Network connectivity tips and troubleshooting
+  - Mobile-optimized responsive design
 - Document upload with RAG index management
 - Model download with progress tracking via polling
 - Template system with grid/list views and localStorage persistence
