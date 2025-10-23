@@ -15,6 +15,7 @@ from utils.config import get_settings
 from utils.logger import configure_logging, get_logger
 from routes import models_router, generate_router
 from routes.ingestion_routes import router as ingestion_router
+from routes.training import router as training_router
 from services import get_ollama_service, cleanup_ollama_service
 from schemas import HealthResponse, ErrorResponse
 
@@ -222,6 +223,7 @@ async def root():
 app.include_router(models_router)
 app.include_router(generate_router)
 app.include_router(ingestion_router)
+app.include_router(training_router)
 
 
 if __name__ == "__main__":

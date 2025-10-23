@@ -2,7 +2,7 @@
 API routes for model management.
 Provides endpoints for listing, downloading, and deleting Ollama models.
 """
-from typing import List
+from typing import List, Dict, Any
 from fastapi import APIRouter, HTTPException, status
 
 from schemas import (
@@ -23,6 +23,82 @@ from utils.logger import get_logger
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/models", tags=["Models"])
+
+
+@router.get(
+    "/download/{model_name}/progress",
+    summary="Get model download progress",
+    description="Get the current progress of a model download operation.",
+    responses={
+        200: {"description": "Download progress information"},
+        404: {"description": "No download in progress for this model"}
+    }
+)
+async def get_download_progress(model_name: str) -> Dict[str, Any]:
+    """
+    Get download progress for a specific model.
+    
+    Args:
+        model_name: Name of the model
+        
+    Returns:
+        Progress information dictionary
+    """
+    try:
+        ollama_service = get_ollama_service()
+        progress = ollama_service.get_download_progress(model_name)
+        
+        if progress is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No download in progress for model '{model_name}'"
+            )
+        
+        return progress
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("get_download_progress_error", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get download progress: {str(e)}"
+        )
+
+
+@router.delete(
+    "/download/{model_name}/progress",
+    summary="Clear download progress tracking",
+    description="Clear the progress tracking for a completed or failed download.",
+    responses={
+        200: {"description": "Progress tracking cleared"}
+    }
+)
+async def clear_download_progress(model_name: str) -> Dict[str, str]:
+    """
+    Clear download progress tracking for a model.
+    
+    Args:
+        model_name: Name of the model
+        
+    Returns:
+        Success message
+    """
+    try:
+        ollama_service = get_ollama_service()
+        ollama_service.clear_download_progress(model_name)
+        
+        return {
+            "status": "success",
+            "message": f"Progress tracking cleared for '{model_name}'"
+        }
+        
+    except Exception as e:
+        logger.error("clear_download_progress_error", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to clear progress: {str(e)}"
+        )
 
 
 @router.get(

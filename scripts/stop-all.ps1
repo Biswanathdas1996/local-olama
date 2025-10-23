@@ -22,6 +22,21 @@ if ($ollamaPort) {
 }
 
 # Stop all Ollama-related processes by name (ollama, ollama app, ollama_llama_server, etc.)
+# Stop by specific process names first to ensure all variants are caught
+$ollamaProcessNames = @("ollama", "ollama app", "ollama_llama_server")
+foreach ($processName in $ollamaProcessNames) {
+    $processes = Get-Process -Name $processName -ErrorAction SilentlyContinue
+    if ($processes) {
+        $processes | ForEach-Object {
+            Write-Host "  Stopping: $($_.ProcessName) (PID: $($_.Id))" -ForegroundColor Gray
+            Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
+            $processesKilled++
+            $ollamaStopped = $true
+        }
+    }
+}
+
+# Also catch any other Ollama-related processes with wildcard
 $ollamaProcesses = Get-Process | Where-Object { $_.ProcessName -like "*ollama*" } -ErrorAction SilentlyContinue
 if ($ollamaProcesses) {
     $ollamaProcesses | ForEach-Object {
