@@ -7,21 +7,30 @@ import { TemplatesPage } from './pages/TemplatesPage';
 import { SavedTemplatesPage } from './pages/SavedTemplatesPage';
 import { TrainingPage } from './pages/TrainingPage';
 import { ConnectPage } from './pages/ConnectPage';
+import { LandingPage } from './pages/LandingPage';
 
 function App() {
   return (
     <Router>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<ChatPage />} />
-          <Route path="/documents" element={<DocumentsPage />} />
-          <Route path="/models" element={<ModelsPage />} />
-          <Route path="/training" element={<TrainingPage />} />
-          <Route path="/templates" element={<TemplatesPage />} />
-          <Route path="/saved-templates" element={<SavedTemplatesPage />} />
-          <Route path="/connect" element={<ConnectPage />} />
-        </Routes>
-      </Layout>
+      <Routes>
+        {/* Landing page without Layout */}
+        <Route path="/landing" element={<LandingPage />} />
+        
+        {/* App routes with Layout */}
+        <Route path="/*" element={
+          <Layout>
+            <Routes>
+              <Route path="/" element={<ChatPage />} />
+              <Route path="/documents" element={<DocumentsPage />} />
+              <Route path="/models" element={<ModelsPage />} />
+              <Route path="/training" element={<TrainingPage />} />
+              <Route path="/templates" element={<TemplatesPage />} />
+              <Route path="/saved-templates" element={<SavedTemplatesPage />} />
+              <Route path="/connect" element={<ConnectPage />} />
+            </Routes>
+          </Layout>
+        } />
+      </Routes>
     </Router>
   );
 }
