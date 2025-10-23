@@ -4,8 +4,6 @@ import { apiService } from '../services/api';
 import type { IndexInfo } from '../types/api';
 import { HtmlPreviewModal } from '../components/HtmlPreviewModal';
 import { templateStorage, type SavedTemplate, type TemplateBox } from '../utils/templateStorage';
-// @ts-ignore - html2pdf.js doesn't have perfect types
-import html2pdf from 'html2pdf.js';
 import { useNavigate } from 'react-router-dom';
 
 const sizeClasses = {
@@ -203,6 +201,11 @@ export function TemplatesPage() {
   };
 
   const exportToPDF = async () => {
+    // PDF export feature temporarily disabled - requires html2pdf.js installation
+    alert('PDF export feature is currently unavailable. Please use JSON export instead.');
+    return;
+    
+    /* 
     try {
       console.log('Starting PDF export...');
       
@@ -450,7 +453,7 @@ export function TemplatesPage() {
       console.log('Generating PDF with high-quality settings...');
 
       // Generate and save PDF
-      await html2pdf().from(pdfContainer).set(opt).save();
+      // await html2pdf().from(pdfContainer).set(opt).save();
       
       console.log('✅ PDF generated successfully!');
       
@@ -506,6 +509,7 @@ export function TemplatesPage() {
       
       alert(`Failed to export PDF: ${error instanceof Error ? error.message : 'Unknown error'}. Please check the browser console for details.`);
     }
+    */
   };
 
   // New template management functions
