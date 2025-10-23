@@ -79,13 +79,27 @@ Preferred communication style: Simple, everyday language.
 - `useHealth`: Periodic health checks for Ollama connectivity
 
 **Key Features**:
-- Real-time chat interface with Markdown rendering and syntax highlighting
+- **WhatsApp-Style Chat Interface** (October 2025):
+  - Teal gradient header with AI avatar and model selector
+  - Message bubbles: teal/green for user (right-aligned), white for assistant (left-aligned)
+  - Rounded pill-shaped input with auto-resize (max 120px height)
+  - Circular teal send button with active states
+  - WhatsApp-style timestamps with check marks for user messages
+  - Subtle dotted background pattern
+  - Auto-scroll to bottom on new messages
+  - Scroll detection with floating "scroll to bottom" button
+  - Dynamic viewport height (100dvh) for mobile devices
+  - Touch-optimized scrolling with webkit-overflow-scrolling
+  - Smooth keyboard handling (Enter to send, Shift+Enter for new line)
+  - Safe-bottom padding for iOS notch devices
+  - Typing indicator with bouncing dots
 - Document upload with RAG index management
 - Model download with progress tracking via polling
 - Template system with grid/list views and localStorage persistence
 - Training data creation from PDFs with job status monitoring
 - Dataset management for fine-tuning workflows
 - Modern UI with glassmorphism, gradient accents, and tech-inspired animations
+- Real-time Markdown rendering with syntax highlighting in chat
 
 **API Communication**: Axios-based service layer with centralized error handling and 5-minute timeout for model operations.
 
