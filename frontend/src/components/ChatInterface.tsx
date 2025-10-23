@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { FiSend, FiTrash2, FiSettings, FiCheck } from 'react-icons/fi';
+import { FiSend, FiTrash2, FiSettings, FiCheck, FiChevronDown } from 'react-icons/fi';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -20,7 +20,10 @@ export function ChatInterface() {
   const [availableIndices, setAvailableIndices] = useState<IndexInfo[]>([]);
   const [selectedIndices, setSelectedIndices] = useState<string[]>([]);
   const [loadingIndices, setLoadingIndices] = useState(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const [options, setOptions] = useState<GenerationOptions>({
     max_tokens: 2000,
@@ -53,9 +56,29 @@ export function ChatInterface() {
     fetchIndices();
   }, []);
 
+  // Auto-scroll to bottom on new messages
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    scrollToBottom('auto');
+  }, [messages, loading]);
+
+  // Detect if user has scrolled up
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+      setShowScrollButton(!isNearBottom && messages.length > 0);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [messages.length]);
+
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,6 +86,11 @@ export function ChatInterface() {
 
     const userPrompt = prompt;
     setPrompt('');
+    
+    // Reset textarea height
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+    }
 
     try {
       await generateResponse(selectedModel, userPrompt, options, selectedIndices.length > 0 ? selectedIndices : undefined);
@@ -85,10 +113,27 @@ export function ChatInterface() {
     return `${seconds.toFixed(2)}s`;
   };
 
+  // Auto-resize textarea as user types
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setPrompt(e.target.value);
+    
+    // Auto-resize
+    e.target.style.height = 'auto';
+    const newHeight = Math.min(e.target.scrollHeight, 120);
+    e.target.style.height = `${newHeight}px`;
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
+  };
+
   return (
-    <div className="bg-gradient-to-b from-gray-100 to-gray-50 flex flex-col h-[calc(100vh-5rem)] sm:h-[calc(100vh-8rem)] rounded-lg shadow-lg overflow-hidden">
-      {/* WhatsApp-style Header */}
-      <div className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gradient-to-r from-teal-600 to-teal-700 flex items-center justify-between shadow-md">
+    <div className="bg-gradient-to-b from-gray-100 to-gray-50 flex flex-col h-[100dvh] sm:h-[calc(100vh-8rem)] rounded-none sm:rounded-lg shadow-lg overflow-hidden">
+      {/* WhatsApp-style Header - Fixed */}
+      <div className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gradient-to-r from-teal-600 to-teal-700 flex items-center justify-between shadow-md flex-shrink-0">
         <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
           <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white rounded-full flex items-center justify-center text-teal-600 font-bold text-sm sm:text-base flex-shrink-0 shadow-sm">
             AI
@@ -97,7 +142,7 @@ export function ChatInterface() {
             <select
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
-              className="bg-white/20 text-white border-0 rounded-md px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium focus:outline-none focus:bg-white/30 transition-all w-full truncate"
+              className="bg-white/20 text-white border-0 rounded-md px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium focus:outline-none focus:bg-white/30 transition-all w-full truncate"
               disabled={loading}
             >
               {models.length === 0 ? (
@@ -115,7 +160,7 @@ export function ChatInterface() {
         <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className="p-2 rounded-full hover:bg-white/10 transition-all text-white"
+            className="p-2 rounded-full hover:bg-white/10 active:bg-white/20 transition-all text-white"
             title="Settings"
             aria-label="Toggle settings"
           >
@@ -123,7 +168,7 @@ export function ChatInterface() {
           </button>
           <button
             onClick={clearMessages}
-            className="p-2 rounded-full hover:bg-white/10 transition-all text-white"
+            className="p-2 rounded-full hover:bg-white/10 active:bg-white/20 transition-all text-white"
             disabled={loading}
             title="Clear chat"
           >
@@ -348,11 +393,14 @@ export function ChatInterface() {
         </div>
       </Modal>
 
-      {/* WhatsApp-style Chat Background */}
+      {/* WhatsApp-style Chat Background - Scrollable */}
       <div 
-        className="flex-1 overflow-y-auto px-2 sm:px-4 py-3 sm:py-4 space-y-1.5 sm:space-y-2"
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto overflow-x-hidden px-2 sm:px-4 py-3 sm:py-4 space-y-1.5 sm:space-y-2 scroll-smooth"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d1d5db' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d1d5db' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'thin'
         }}
       >
         {error && (
@@ -461,33 +509,41 @@ export function ChatInterface() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* WhatsApp-style Input Area */}
-      <form onSubmit={handleSubmit} className="px-2 sm:px-3 py-2 sm:py-2.5 bg-gray-100 border-t border-gray-200">
+      {/* Scroll to bottom button */}
+      {showScrollButton && (
+        <button
+          onClick={() => scrollToBottom('smooth')}
+          className="fixed bottom-20 sm:bottom-24 right-4 sm:right-8 bg-teal-600 text-white rounded-full p-3 shadow-lg hover:bg-teal-700 active:bg-teal-800 transition-all z-10 animate-fadeIn"
+          aria-label="Scroll to bottom"
+        >
+          <FiChevronDown className="w-5 h-5" />
+        </button>
+      )}
+
+      {/* WhatsApp-style Input Area - Fixed */}
+      <form onSubmit={handleSubmit} className="px-2 sm:px-3 py-2 sm:py-2.5 bg-gray-100 border-t border-gray-200 flex-shrink-0 safe-bottom">
         <div className="flex items-end space-x-2 max-w-5xl mx-auto">
-          <div className="flex-1 bg-white rounded-full shadow-sm border border-gray-200 focus-within:border-teal-500 transition-all">
+          <div className="flex-1 bg-white rounded-3xl shadow-sm border border-gray-200 focus-within:border-teal-500 transition-all">
             <textarea
+              ref={inputRef}
               value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
+              onChange={handleTextareaChange}
+              onKeyDown={handleKeyDown}
               placeholder="Type a message..."
-              className="w-full px-4 py-2.5 sm:py-3 bg-transparent focus:outline-none resize-none text-sm sm:text-base rounded-full"
+              className="w-full px-4 py-2.5 sm:py-3 bg-transparent focus:outline-none resize-none text-base rounded-3xl"
               rows={1}
               disabled={loading || !selectedModel}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSubmit(e);
-                }
-              }}
               style={{
                 maxHeight: '120px',
-                minHeight: '44px'
+                minHeight: '44px',
+                height: 'auto'
               }}
             />
           </div>
           <button
             type="submit"
             disabled={loading || !prompt.trim() || !selectedModel}
-            className="w-11 h-11 sm:w-12 sm:h-12 bg-gradient-to-br from-teal-500 to-teal-600 text-white rounded-full hover:from-teal-600 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center shadow-md hover:shadow-lg flex-shrink-0"
+            className="w-11 h-11 sm:w-12 sm:h-12 bg-gradient-to-br from-teal-500 to-teal-600 text-white rounded-full hover:from-teal-600 hover:to-teal-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center shadow-md hover:shadow-lg flex-shrink-0"
             aria-label="Send message"
           >
             <FiSend className="w-5 h-5" />
