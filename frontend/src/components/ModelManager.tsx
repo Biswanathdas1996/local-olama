@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { FiDownload, FiTrash2, FiRefreshCw, FiCpu, FiHardDrive } from 'react-icons/fi';
+import { FiDownload, FiTrash2, FiRefreshCw, FiCpu, FiHardDrive, FiAlertCircle, FiCheckCircle, FiX } from 'react-icons/fi';
 import { useModels } from '../hooks/useModels';
 
 export function ModelManager() {
   const { models, loading, error, downloadProgress, fetchModels, downloadModel, deleteModel } = useModels();
   const [downloadName, setDownloadName] = useState('');
   const [downloading, setDownloading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleDownload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -15,26 +17,26 @@ export function ModelManager() {
     
     try {
       setDownloading(true);
+      setErrorMsg(null);
       await downloadModel(trimmedName);
       setDownloadName('');
-      // Don't show alert immediately - let the progress tracker handle it
     } catch (err) {
-      alert(`Failed to download model: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setErrorMsg(`Failed to download: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setDownloading(false);
     } finally {
-      // Reset downloading state after a short delay to allow progress tracking to start
       setTimeout(() => setDownloading(false), 500);
     }
   };
 
   const handleDelete = async (modelName: string) => {
-    if (!confirm(`Are you sure you want to delete "${modelName}"?`)) return;
+    if (!confirm(`Delete "${modelName}"?`)) return;
 
     try {
       await deleteModel(modelName);
-      alert(`Model "${modelName}" deleted successfully!`);
+      setSuccessMsg(`Model "${modelName}" deleted`);
+      setTimeout(() => setSuccessMsg(null), 3000);
     } catch (err) {
-      alert(`Failed to delete model: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setErrorMsg(`Failed to delete: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
 
@@ -45,190 +47,224 @@ export function ModelManager() {
   };
 
   return (
-    <div className="bg-white rounded-lg sm:rounded-xl md:rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-6 md:p-8">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-3 sm:gap-0">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">Model Management</h2>
-          <p className="text-xs sm:text-sm text-gray-600">Download and manage your local LLM models</p>
+    <div className="glass-card rounded-2xl tech-shadow-lg border border-blue-100/50 relative overflow-hidden">
+      {/* Decorative gradient orbs */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-400/10 to-indigo-400/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-cyan-400/10 to-purple-400/10 rounded-full blur-3xl pointer-events-none" />
+      
+      {/* Header */}
+      <div className="relative z-10 px-4 sm:px-6 py-3 sm:py-4 border-b border-blue-100/50 bg-gradient-to-r from-blue-50/50 to-cyan-50/30">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2.5">
+            <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl tech-shadow neon-cyan">
+              <FiCpu className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-lg sm:text-xl font-bold gradient-text-cyan">Model Management</h2>
+              <p className="text-xs text-slate-600">Download & manage LLMs</p>
+            </div>
+          </div>
+          <button
+            onClick={fetchModels}
+            disabled={loading}
+            className="flex items-center space-x-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 transition-all tech-shadow font-medium text-sm"
+          >
+            <FiRefreshCw className={loading ? 'animate-spin w-4 h-4' : 'w-4 h-4'} />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
         </div>
-        <button
-          onClick={fetchModels}
-          disabled={loading}
-          className="w-full sm:w-auto flex items-center justify-center space-x-1.5 sm:space-x-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 transition-all shadow-lg shadow-blue-500/30 font-medium text-sm"
-        >
-          <FiRefreshCw className={loading ? 'animate-spin w-4 h-4' : 'w-4 h-4'} />
-          <span>Refresh</span>
-        </button>
       </div>
 
-      {error && (
-        <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg shadow-sm">
-          <p className="font-medium text-sm">Error</p>
-          <p className="text-xs sm:text-sm mt-1">{error}</p>
-        </div>
-      )}
-
-      {/* Download Form */}
-      <div className="mb-6 sm:mb-8 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-blue-100">
-        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center space-x-1.5 sm:space-x-2">
-          <FiDownload className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-          <span>Download New Model</span>
-        </h3>
-        <form onSubmit={handleDownload}>
-          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-            <input
-              type="text"
-              value={downloadName}
-              onChange={(e) => setDownloadName(e.target.value)}
-              placeholder="Enter model name (e.g., llama3, mistral)"
-              className="flex-1 px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm text-sm"
-              disabled={downloading}
-            />
-            <button
-              type="submit"
-              disabled={downloading || !downloadName.trim()}
-              className="flex items-center justify-center space-x-1.5 sm:space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg sm:rounded-xl hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 transition-all font-medium shadow-lg shadow-green-500/30 text-sm"
-            >
-              <FiDownload className="w-4 h-4" />
-              <span>{downloading ? 'Downloading...' : 'Download'}</span>
+      {/* Alerts */}
+      <div className="relative z-10 px-4 sm:px-6 pt-4 space-y-2">
+        {error && (
+          <div className="flex items-start space-x-3 p-3 bg-red-50 border border-red-200/50 rounded-xl text-red-800 animate-slide-in-right">
+            <FiAlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <span className="text-sm flex-1">{error}</span>
+            <button onClick={() => {}} className="text-red-600 hover:text-red-800">
+              <FiX className="w-4 h-4" />
             </button>
           </div>
-          <div className="mt-2 sm:mt-3 flex flex-wrap gap-1.5 sm:gap-2">
-            <span className="text-xs text-gray-600 font-medium w-full sm:w-auto">Popular models:</span>
-            {['llama3', 'mistral', 'codellama', 'phi3'].map(model => (
-              <button
-                key={model}
-                type="button"
-                onClick={() => setDownloadName(model)}
-                className="px-2.5 sm:px-3 py-1 bg-white text-gray-700 text-xs font-medium rounded-md sm:rounded-lg hover:bg-blue-100 hover:text-blue-700 transition-colors shadow-sm border border-gray-200"
-              >
-                {model}
-              </button>
-            ))}
+        )}
+        {errorMsg && (
+          <div className="flex items-start space-x-3 p-3 bg-red-50 border border-red-200/50 rounded-xl text-red-800 animate-slide-in-right">
+            <FiAlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <span className="text-sm flex-1">{errorMsg}</span>
+            <button onClick={() => setErrorMsg(null)} className="text-red-600 hover:text-red-800">
+              <FiX className="w-4 h-4" />
+            </button>
           </div>
-        </form>
+        )}
+        {successMsg && (
+          <div className="flex items-start space-x-3 p-3 bg-green-50 border border-green-200/50 rounded-xl text-green-800 animate-slide-in-right">
+            <FiCheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <span className="text-sm flex-1">{successMsg}</span>
+            <button onClick={() => setSuccessMsg(null)} className="text-green-600 hover:text-green-800">
+              <FiX className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Download Progress Indicators */}
-      {Object.entries(downloadProgress).length > 0 && (
-        <div className="mb-6 sm:mb-8 space-y-3">
-          {Object.entries(downloadProgress).map(([modelName, progress]) => (
-            <div
-              key={modelName}
-              className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-purple-100 shadow-md"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-semibold text-gray-900 text-sm sm:text-base">
-                  Downloading: {modelName}
-                </h4>
-                <span className={`text-xs sm:text-sm font-medium px-2.5 py-1 rounded-lg ${
-                  progress.status === 'completed' 
-                    ? 'bg-green-100 text-green-700' 
-                    : progress.status === 'failed' 
-                    ? 'bg-red-100 text-red-700' 
-                    : 'bg-blue-100 text-blue-700'
-                }`}>
-                  {progress.status === 'completed' 
-                    ? '✓ Complete' 
-                    : progress.status === 'failed' 
-                    ? '✗ Failed' 
-                    : `${progress.progress}%`}
-                </span>
-              </div>
-              
-              {/* Progress Bar */}
-              {progress.status !== 'failed' && (
-                <div className="w-full bg-gray-200 rounded-full h-2 sm:h-2.5 mb-2 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-300 ${
-                      progress.status === 'completed'
-                        ? 'bg-gradient-to-r from-green-500 to-emerald-500'
-                        : 'bg-gradient-to-r from-blue-500 to-indigo-500'
-                    }`}
-                    style={{ width: `${progress.progress}%` }}
-                  >
-                    {progress.status === 'downloading' && progress.progress > 0 && (
-                      <div className="w-full h-full bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-pulse" />
-                    )}
-                  </div>
-                </div>
-              )}
-              
-              <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                {progress.message}
-              </p>
-              
-              {progress.error && (
-                <p className="text-xs sm:text-sm text-red-600 mt-1 font-medium">
-                  Error: {progress.error}
-                </p>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Models List */}
-      <div>
-        <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900">
-            Available Models ({models.length})
-          </h3>
-        </div>
-        {loading && models.length === 0 ? (
-          <div className="text-center py-12 sm:py-16">
-            <div className="inline-block p-4 sm:p-6 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl sm:rounded-2xl shadow-lg mb-3 sm:mb-4">
-              <FiRefreshCw className="w-10 h-10 sm:w-12 sm:h-12 text-blue-600 animate-spin" />
-            </div>
-            <p className="text-sm sm:text-base text-gray-600 font-medium">Loading models...</p>
+      {/* Content */}
+      <div className="relative z-10 p-4 sm:p-6 space-y-4">
+        {/* Download Form */}
+        <div className="glass-card p-4 rounded-xl border border-blue-100/50 space-y-3">
+          <div className="flex items-center space-x-2">
+            <FiDownload className="w-4 h-4 text-blue-600" />
+            <h3 className="text-sm font-semibold text-slate-900">Download New Model</h3>
           </div>
-        ) : models.length === 0 ? (
-          <div className="text-center py-12 sm:py-16 bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl sm:rounded-2xl border-2 border-dashed border-gray-300">
-            <div className="inline-block p-4 sm:p-6 bg-white rounded-xl sm:rounded-2xl shadow-md mb-3 sm:mb-4">
-              <FiCpu className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400" />
-            </div>
-            <p className="text-sm sm:text-base text-gray-600 font-medium mb-1 sm:mb-2">No models available</p>
-            <p className="text-xs sm:text-sm text-gray-500">Download a model to get started!</p>
-          </div>
-        ) : (
-          <div className="grid gap-3 sm:gap-4">
-            {models.map((model) => (
-              <div
-                key={model.name}
-                className="group flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 md:p-5 bg-gradient-to-r from-white to-gray-50 rounded-lg sm:rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all gap-3 sm:gap-0"
+          
+          <form onSubmit={handleDownload} className="space-y-3">
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+              <input
+                type="text"
+                value={downloadName}
+                onChange={(e) => setDownloadName(e.target.value)}
+                placeholder="Model name (e.g., llama3, mistral)"
+                className="flex-1 px-3 py-2.5 border border-blue-200/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm transition-all"
+                disabled={downloading}
+              />
+              <button
+                type="submit"
+                disabled={downloading || !downloadName.trim()}
+                className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 transition-all font-medium tech-shadow text-sm"
               >
-                <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4 flex-1 min-w-0 w-full sm:w-auto">
-                  <div className="p-2 sm:p-3 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg sm:rounded-xl flex-shrink-0">
-                    <FiCpu className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-gray-900 mb-0.5 sm:mb-1 text-sm sm:text-base truncate">{model.name}</h4>
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 text-xs sm:text-sm text-gray-500 gap-0.5 sm:gap-0">
-                      <span className="flex items-center space-x-1">
-                        <FiHardDrive className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                        <span>{formatSize(model.size)}</span>
-                      </span>
-                      {model.modified_at && (
-                        <>
-                          <span className="hidden sm:inline">•</span>
-                          <span className="truncate">Modified: {new Date(model.modified_at).toLocaleDateString()}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <FiDownload className="w-4 h-4" />
+                <span>{downloading ? 'Downloading...' : 'Download'}</span>
+              </button>
+            </div>
+            
+            <div className="flex flex-wrap gap-1.5">
+              <span className="text-xs text-slate-600 font-medium">Popular:</span>
+              {['llama3', 'mistral', 'codellama', 'phi3', 'gemma'].map(model => (
                 <button
-                  onClick={() => handleDelete(model.name)}
-                  className="w-full sm:w-auto flex items-center justify-center space-x-1 sm:space-x-1.5 px-3 sm:px-4 py-1.5 sm:py-2 text-red-600 hover:bg-red-50 rounded-lg sm:rounded-xl transition-all font-medium sm:opacity-0 sm:group-hover:opacity-100 border border-transparent hover:border-red-200 text-sm"
-                  title="Delete model"
+                  key={model}
+                  type="button"
+                  onClick={() => setDownloadName(model)}
+                  className="px-2.5 py-1 bg-white text-slate-700 text-xs font-medium rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-all border border-blue-200/30"
                 >
-                  <FiTrash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span>Delete</span>
+                  {model}
                 </button>
+              ))}
+            </div>
+          </form>
+        </div>
+
+        {/* Download Progress */}
+        {Object.entries(downloadProgress).length > 0 && (
+          <div className="space-y-3">
+            {Object.entries(downloadProgress).map(([modelName, progress]) => (
+              <div
+                key={modelName}
+                className="glass-card p-4 rounded-xl border border-purple-100/50 animate-slide-in-right"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-semibold text-slate-900 text-sm">
+                    Downloading: {modelName}
+                  </h4>
+                  <span className={`text-xs font-medium px-2.5 py-1 rounded-lg ${
+                    progress.status === 'completed' 
+                      ? 'bg-green-100 text-green-700' 
+                      : progress.status === 'failed' 
+                      ? 'bg-red-100 text-red-700' 
+                      : 'bg-blue-100 text-blue-700'
+                  }`}>
+                    {progress.status === 'completed' 
+                      ? '✓ Complete' 
+                      : progress.status === 'failed' 
+                      ? '✗ Failed' 
+                      : `${progress.progress}%`}
+                  </span>
+                </div>
+                
+                {progress.status !== 'failed' && (
+                  <div className="w-full bg-slate-200 rounded-full h-2 mb-2 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        progress.status === 'completed'
+                          ? 'bg-gradient-to-r from-green-500 to-emerald-500'
+                          : 'bg-gradient-to-r from-blue-500 to-indigo-500'
+                      }`}
+                      style={{ width: `${progress.progress}%` }}
+                    />
+                  </div>
+                )}
+                
+                <p className="text-xs text-slate-600">{progress.message}</p>
+                
+                {progress.error && (
+                  <p className="text-xs text-red-600 mt-1 font-medium">
+                    Error: {progress.error}
+                  </p>
+                )}
               </div>
             ))}
           </div>
         )}
+
+        {/* Models List */}
+        <div className="glass-card p-4 rounded-xl border border-blue-100/50">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-slate-900">
+              Available Models ({models.length})
+            </h3>
+          </div>
+
+          {loading && models.length === 0 ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="flex flex-col items-center space-y-3">
+                <FiRefreshCw className="w-8 h-8 text-blue-600 animate-spin" />
+                <p className="text-sm text-slate-600">Loading models...</p>
+              </div>
+            </div>
+          ) : models.length === 0 ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center space-y-2">
+                <FiCpu className="w-12 h-12 text-slate-300 mx-auto" />
+                <p className="text-sm text-slate-600">No models installed</p>
+                <p className="text-xs text-slate-500">Download a model to get started</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {models.map((model) => (
+                <div
+                  key={model.name}
+                  className="flex items-center justify-between p-3 bg-white rounded-lg border border-blue-100/30 hover:border-blue-300/50 transition-all group"
+                >
+                  <div className="flex items-center space-x-3 min-w-0 flex-1">
+                    <div className="p-2 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg">
+                      <FiCpu className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-slate-900 text-sm truncate">{model.name}</p>
+                      <div className="flex items-center space-x-2 text-xs text-slate-500">
+                        <span className="flex items-center space-x-1">
+                          <FiHardDrive className="w-3 h-3" />
+                          <span>{formatSize(model.size)}</span>
+                        </span>
+                        {model.modified_at && (
+                          <>
+                            <span>•</span>
+                            <span>{new Date(model.modified_at).toLocaleDateString()}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleDelete(model.name)}
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
+                    title="Delete model"
+                  >
+                    <FiTrash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
