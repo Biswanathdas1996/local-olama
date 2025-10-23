@@ -4,6 +4,7 @@ import { apiService } from '../services/api';
 import type { IndexInfo } from '../types/api';
 import { HtmlPreviewModal } from '../components/HtmlPreviewModal';
 import { templateStorage, type SavedTemplate, type TemplateBox } from '../utils/templateStorage';
+// @ts-ignore - html2pdf.js doesn't have perfect types
 import html2pdf from 'html2pdf.js';
 import { useNavigate } from 'react-router-dom';
 
@@ -202,144 +203,308 @@ export function TemplatesPage() {
   };
 
   const exportToPDF = async () => {
-    // Create a visible container for PDF export with exact positioning
-    const pdfContainer = document.createElement('div');
-    pdfContainer.style.position = 'fixed';
-    pdfContainer.style.top = '0';
-    pdfContainer.style.left = '0';
-    pdfContainer.style.width = '793px'; // A4 width in pixels at 96 DPI
-    pdfContainer.style.padding = '40px';
-    pdfContainer.style.backgroundColor = '#ffffff';
-    pdfContainer.style.fontFamily = 'Arial, sans-serif';
-    pdfContainer.style.zIndex = '-1';
-    pdfContainer.style.opacity = '0';
-    
-    // Add template title
-    const titleDiv = document.createElement('div');
-    titleDiv.style.marginBottom = '20px';
-    titleDiv.style.paddingBottom = '10px';
-    titleDiv.style.borderBottom = '2px solid #3B82F6';
-    titleDiv.innerHTML = `
-      <h1 style="font-size: 24px; font-weight: bold; color: #1F2937; margin: 0 0 8px 0;">${templateName}</h1>
-      <div style="font-size: 12px; color: #6B7280;">
-        <span>Model: ${selectedModel}</span>
-        ${selectedIndices.length > 0 ? `<span style="margin-left: 16px;">Indices: ${selectedIndices.join(', ')}</span>` : ''}
-        <span style="margin-left: 16px;">Generated: ${new Date().toLocaleString()}</span>
-      </div>
-    `;
-    pdfContainer.appendChild(titleDiv);
-
-    // Calculate grid layout based on box sizes
-    const gridContainer = document.createElement('div');
-    gridContainer.style.display = 'grid';
-    gridContainer.style.gridTemplateColumns = 'repeat(3, 1fr)';
-    gridContainer.style.gap = '10px';
-    gridContainer.style.width = '100%';
-
-    // Add boxes with exact positioning
-    boxes.forEach((box) => {
-      const boxDiv = document.createElement('div');
-      
-      // Apply size classes similar to the UI
-      const sizeStyles = {
-        small: { gridColumn: 'span 1', gridRow: 'span 1', minHeight: '150px' },
-        medium: { gridColumn: 'span 2', gridRow: 'span 1', minHeight: '150px' },
-        large: { gridColumn: 'span 2', gridRow: 'span 2', minHeight: '300px' },
-        xlarge: { gridColumn: 'span 3', gridRow: 'span 2', minHeight: '300px' },
-      };
-
-      const style = sizeStyles[box.size];
-      boxDiv.style.gridColumn = style.gridColumn;
-      boxDiv.style.gridRow = style.gridRow;
-      boxDiv.style.minHeight = style.minHeight;
-      boxDiv.style.border = '2px solid #E5E7EB';
-      boxDiv.style.borderRadius = '8px';
-      boxDiv.style.padding = '12px';
-      boxDiv.style.backgroundColor = '#F9FAFB';
-      boxDiv.style.display = 'flex';
-      boxDiv.style.flexDirection = 'column';
-      boxDiv.style.pageBreakInside = 'avoid';
-
-      // Box header with size indicator
-      const headerDiv = document.createElement('div');
-      headerDiv.style.marginBottom = '8px';
-      headerDiv.style.paddingBottom = '6px';
-      headerDiv.style.borderBottom = '1px solid #D1D5DB';
-      headerDiv.innerHTML = `
-        <div style="font-size: 10px; color: #6B7280; font-weight: 600; text-transform: uppercase;">
-          ${box.size.toUpperCase()} BOX
-        </div>
-      `;
-      boxDiv.appendChild(headerDiv);
-
-      // Prompt section
-      const promptDiv = document.createElement('div');
-      promptDiv.style.marginBottom = '8px';
-      promptDiv.innerHTML = `
-        <div style="font-size: 10px; font-weight: 600; color: #374151; margin-bottom: 4px;">PROMPT:</div>
-        <div style="font-size: 11px; color: #1F2937; padding: 6px; background-color: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word;">
-          ${box.prompt || '<em style="color: #9CA3AF;">No prompt</em>'}
-        </div>
-      `;
-      boxDiv.appendChild(promptDiv);
-
-      // Response section
-      const responseDiv = document.createElement('div');
-      responseDiv.style.flex = '1';
-      responseDiv.style.display = 'flex';
-      responseDiv.style.flexDirection = 'column';
-      responseDiv.innerHTML = `
-        <div style="font-size: 10px; font-weight: 600; color: #374151; margin-bottom: 4px;">RESPONSE:</div>
-        <div style="flex: 1; font-size: 11px; color: #1F2937; padding: 6px; background-color: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; overflow: hidden;">
-          ${box.response || '<em style="color: #9CA3AF;">No response yet</em>'}
-        </div>
-      `;
-      boxDiv.appendChild(responseDiv);
-
-      gridContainer.appendChild(boxDiv);
-    });
-
-    pdfContainer.appendChild(gridContainer);
-    document.body.appendChild(pdfContainer);
-
     try {
-      // Wait for DOM to render
-      await new Promise(resolve => setTimeout(resolve, 100));
+      console.log('Starting PDF export...');
+      
+      // Validate html2pdf is available
+      if (typeof html2pdf !== 'function') {
+        console.error('html2pdf is not loaded correctly');
+        alert('PDF library not loaded. Please refresh the page and try again.');
+        return;
+      }
 
-      // Configure PDF options for exact positioning
-      const options = {
-        margin: [10, 10, 10, 10] as [number, number, number, number],
-        filename: `${templateName.replace(/\s+/g, '_')}.pdf`,
-        image: { type: 'jpeg' as const, quality: 0.98 },
+      // Show loading indicator
+      const loadingMsg = document.createElement('div');
+      loadingMsg.id = 'pdf-loading';
+      loadingMsg.style.position = 'fixed';
+      loadingMsg.style.top = '50%';
+      loadingMsg.style.left = '50%';
+      loadingMsg.style.transform = 'translate(-50%, -50%)';
+      loadingMsg.style.padding = '20px 40px';
+      loadingMsg.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+      loadingMsg.style.color = 'white';
+      loadingMsg.style.borderRadius = '8px';
+      loadingMsg.style.zIndex = '10000';
+      loadingMsg.style.fontSize = '16px';
+      loadingMsg.style.fontWeight = 'bold';
+      loadingMsg.textContent = 'Generating PDF...';
+      document.body.appendChild(loadingMsg);
+
+      // Create a container optimized for PDF rendering
+      const pdfContainer = document.createElement('div');
+      pdfContainer.id = 'pdf-export-container';
+      pdfContainer.style.position = 'fixed';
+      pdfContainer.style.top = '0';
+      pdfContainer.style.left = '0';
+      pdfContainer.style.width = '794px'; // A4 width in pixels (210mm at 96 DPI)
+      pdfContainer.style.minHeight = '1123px'; // A4 height in pixels (297mm at 96 DPI)
+      pdfContainer.style.padding = '60px';
+      pdfContainer.style.backgroundColor = '#ffffff';
+      pdfContainer.style.fontFamily = "'Segoe UI', Arial, sans-serif";
+      pdfContainer.style.color = '#000000';
+      pdfContainer.style.boxSizing = 'border-box';
+      pdfContainer.style.zIndex = '9999';
+      pdfContainer.style.overflow = 'auto';
+      
+      // Create header with template information
+      const headerDiv = document.createElement('div');
+      headerDiv.style.marginBottom = '30px';
+      headerDiv.style.paddingBottom = '20px';
+      headerDiv.style.borderBottom = '3px solid #3B82F6';
+      
+      const title = document.createElement('h1');
+      title.style.fontSize = '28px';
+      title.style.fontWeight = 'bold';
+      title.style.color = '#1F2937';
+      title.style.margin = '0 0 8px 0';
+      title.style.lineHeight = '1.2';
+      title.textContent = templateName;
+      headerDiv.appendChild(title);
+      
+      const metadata = document.createElement('div');
+      metadata.style.fontSize = '11px';
+      metadata.style.color = '#6B7280';
+      metadata.style.lineHeight = '1.5';
+      
+      const metadataItems = [];
+      metadataItems.push(`<strong>Model:</strong> ${selectedModel}`);
+      if (selectedIndices.length > 0) {
+        metadataItems.push(`<strong>Indices:</strong> ${selectedIndices.join(', ')}`);
+      }
+      metadataItems.push(`<strong>Generated:</strong> ${new Date().toLocaleString()}`);
+      metadataItems.push(`<strong>Total Boxes:</strong> ${boxes.length}`);
+      
+      metadata.innerHTML = metadataItems.join(' &nbsp;|&nbsp; ');
+      headerDiv.appendChild(metadata);
+      pdfContainer.appendChild(headerDiv);
+
+      // Create content area with all boxes
+      const contentDiv = document.createElement('div');
+      contentDiv.style.width = '100%';
+      
+      // Sort boxes for better PDF flow (optional - maintains order)
+      const sortedBoxes = [...boxes];
+      
+      // Render each box sequentially for better PDF layout
+      sortedBoxes.forEach((box, index) => {
+        const boxContainer = document.createElement('div');
+        boxContainer.style.marginBottom = '20px';
+        boxContainer.style.pageBreakInside = 'avoid';
+        boxContainer.style.border = '2px solid #E5E7EB';
+        boxContainer.style.borderRadius = '6px';
+        boxContainer.style.padding = '15px';
+        boxContainer.style.backgroundColor = '#FAFAFA';
+        boxContainer.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+        
+        // Box number and size badge
+        const boxHeader = document.createElement('div');
+        boxHeader.style.display = 'flex';
+        boxHeader.style.justifyContent = 'space-between';
+        boxHeader.style.alignItems = 'center';
+        boxHeader.style.marginBottom = '12px';
+        boxHeader.style.paddingBottom = '8px';
+        boxHeader.style.borderBottom = '1px solid #D1D5DB';
+        
+        const boxNumber = document.createElement('span');
+        boxNumber.style.fontSize = '12px';
+        boxNumber.style.fontWeight = 'bold';
+        boxNumber.style.color = '#374151';
+        boxNumber.textContent = `Box ${index + 1}`;
+        boxHeader.appendChild(boxNumber);
+        
+        const sizeBadge = document.createElement('span');
+        sizeBadge.style.fontSize = '10px';
+        sizeBadge.style.fontWeight = '600';
+        sizeBadge.style.padding = '3px 8px';
+        sizeBadge.style.borderRadius = '4px';
+        sizeBadge.style.backgroundColor = '#E0E7FF';
+        sizeBadge.style.color = '#4338CA';
+        sizeBadge.style.textTransform = 'uppercase';
+        sizeBadge.textContent = box.size;
+        boxHeader.appendChild(sizeBadge);
+        
+        boxContainer.appendChild(boxHeader);
+        
+        // Prompt section with better formatting
+        if (box.prompt.trim()) {
+          const promptSection = document.createElement('div');
+          promptSection.style.marginBottom = '12px';
+          
+          const promptLabel = document.createElement('div');
+          promptLabel.style.fontSize = '12px';
+          promptLabel.style.fontWeight = '700';
+          promptLabel.style.color = '#374151';
+          promptLabel.style.marginBottom = '6px';
+          promptLabel.textContent = 'Prompt';
+          promptSection.appendChild(promptLabel);
+          
+          const promptContent = document.createElement('div');
+          promptContent.style.fontSize = '11px';
+          promptContent.style.lineHeight = '1.6';
+          promptContent.style.color = '#1F2937';
+          promptContent.style.padding = '12px';
+          promptContent.style.backgroundColor = '#FFFFFF';
+          promptContent.style.border = '1px solid #E5E7EB';
+          promptContent.style.borderRadius = '4px';
+          promptContent.style.whiteSpace = 'pre-wrap';
+          promptContent.style.wordWrap = 'break-word';
+          promptContent.textContent = box.prompt;
+          promptSection.appendChild(promptContent);
+          
+          boxContainer.appendChild(promptSection);
+        }
+        
+        // Response section with better formatting
+        if (box.response.trim()) {
+          const responseSection = document.createElement('div');
+          
+          const responseLabel = document.createElement('div');
+          responseLabel.style.fontSize = '12px';
+          responseLabel.style.fontWeight = '700';
+          responseLabel.style.color = '#374151';
+          responseLabel.style.marginBottom = '6px';
+          responseLabel.textContent = 'Response';
+          responseSection.appendChild(responseLabel);
+          
+          const responseContent = document.createElement('div');
+          responseContent.style.fontSize = '11px';
+          responseContent.style.lineHeight = '1.7';
+          responseContent.style.color = '#1F2937';
+          responseContent.style.padding = '12px';
+          responseContent.style.backgroundColor = '#FFFFFF';
+          responseContent.style.border = '1px solid #E5E7EB';
+          responseContent.style.borderRadius = '4px';
+          responseContent.style.whiteSpace = 'pre-wrap';
+          responseContent.style.wordWrap = 'break-word';
+          responseContent.style.minHeight = '60px';
+          responseContent.textContent = box.response;
+          responseSection.appendChild(responseContent);
+          
+          boxContainer.appendChild(responseSection);
+        } else {
+          // Empty response placeholder
+          const emptyResponse = document.createElement('div');
+          emptyResponse.style.fontSize = '11px';
+          emptyResponse.style.color = '#9CA3AF';
+          emptyResponse.style.fontStyle = 'italic';
+          emptyResponse.style.padding = '12px';
+          emptyResponse.style.backgroundColor = '#F9FAFB';
+          emptyResponse.style.border = '1px dashed #D1D5DB';
+          emptyResponse.style.borderRadius = '4px';
+          emptyResponse.style.textAlign = 'center';
+          emptyResponse.textContent = 'No response generated';
+          boxContainer.appendChild(emptyResponse);
+        }
+        
+        contentDiv.appendChild(boxContainer);
+      });
+      
+      pdfContainer.appendChild(contentDiv);
+      
+      // Add footer
+      const footerDiv = document.createElement('div');
+      footerDiv.style.marginTop = '30px';
+      footerDiv.style.paddingTop = '15px';
+      footerDiv.style.borderTop = '1px solid #E5E7EB';
+      footerDiv.style.fontSize = '9px';
+      footerDiv.style.color = '#9CA3AF';
+      footerDiv.style.textAlign = 'center';
+      footerDiv.innerHTML = `Generated by Local LLM Template System | ${new Date().toLocaleDateString()}`;
+      pdfContainer.appendChild(footerDiv);
+      
+      document.body.appendChild(pdfContainer);
+
+      console.log('PDF container created with', boxes.length, 'boxes');
+
+      // Wait for DOM to fully render
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Configure PDF options for best quality
+      const opt = {
+        margin: 10,
+        filename: `${templateName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
+        image: { 
+          type: 'jpeg' as const, 
+          quality: 0.95 
+        },
         html2canvas: { 
           scale: 2,
           useCORS: true,
-          letterRendering: true,
           logging: true,
+          letterRendering: true,
           backgroundColor: '#ffffff',
+          width: 794,
+          height: pdfContainer.scrollHeight,
+          windowWidth: 794,
+          windowHeight: pdfContainer.scrollHeight,
+          x: 0,
+          y: 0,
         },
         jsPDF: { 
-          unit: 'mm', 
-          format: 'a4', 
+          unit: 'mm' as const, 
+          format: 'a4' as const, 
           orientation: 'portrait' as const,
-          compress: true,
         },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
       };
 
-      // Generate PDF
-      await html2pdf().set(options).from(pdfContainer).save();
+      console.log('Generating PDF with high-quality settings...');
+
+      // Generate and save PDF
+      await html2pdf().from(pdfContainer).set(opt).save();
+      
+      console.log('✅ PDF generated successfully!');
       
       // Clean up
-      document.body.removeChild(pdfContainer);
+      setTimeout(() => {
+        if (document.body.contains(pdfContainer)) {
+          document.body.removeChild(pdfContainer);
+        }
+        if (document.body.contains(loadingMsg)) {
+          document.body.removeChild(loadingMsg);
+        }
+      }, 100);
       
-      console.log('PDF exported successfully');
+      // Show success message
+      const successMsg = document.createElement('div');
+      successMsg.style.position = 'fixed';
+      successMsg.style.top = '20px';
+      successMsg.style.right = '20px';
+      successMsg.style.padding = '15px 25px';
+      successMsg.style.backgroundColor = '#10B981';
+      successMsg.style.color = 'white';
+      successMsg.style.borderRadius = '8px';
+      successMsg.style.zIndex = '10000';
+      successMsg.style.fontSize = '14px';
+      successMsg.style.fontWeight = 'bold';
+      successMsg.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+      successMsg.textContent = '✓ PDF exported successfully!';
+      document.body.appendChild(successMsg);
+      
+      setTimeout(() => {
+        if (document.body.contains(successMsg)) {
+          document.body.removeChild(successMsg);
+        }
+      }, 3000);
+      
     } catch (error) {
-      console.error('Failed to export PDF:', error);
-      if (document.body.contains(pdfContainer)) {
-        document.body.removeChild(pdfContainer);
+      console.error('❌ Failed to export PDF:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      
+      // Clean up on error
+      const container = document.getElementById('pdf-export-container');
+      if (container && document.body.contains(container)) {
+        document.body.removeChild(container);
       }
-      alert('Failed to export PDF. Please try again.');
+      
+      const loading = document.getElementById('pdf-loading');
+      if (loading && document.body.contains(loading)) {
+        document.body.removeChild(loading);
+      }
+      
+      alert(`Failed to export PDF: ${error instanceof Error ? error.message : 'Unknown error'}. Please check the browser console for details.`);
     }
   };
 
