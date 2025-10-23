@@ -1,15 +1,9 @@
-import { useState, useEffect } from 'react';
-import { FiPlus, FiPlay, FiSave, FiTrash2, FiLoader } from 'react-icons/fi';
+import { useState, useEffect, useRef } from 'react';
+import { FiPlus, FiPlay, FiSave, FiTrash2, FiLoader, FiEye, FiEdit2, FiCheck, FiX, FiUpload, FiDownload, FiList } from 'react-icons/fi';
 import { apiService } from '../services/api';
 import type { IndexInfo } from '../types/api';
-
-interface TemplateBox {
-  id: string;
-  prompt: string;
-  response: string;
-  size: 'small' | 'medium' | 'large' | 'xlarge';
-  isGenerating: boolean;
-}
+import { HtmlPreviewModal } from '../components/HtmlPreviewModal';
+import { templateStorage, type SavedTemplate, type TemplateBox } from '../utils/templateStorage';
 
 const sizeClasses = {
   small: 'col-span-1 row-span-1',
@@ -28,11 +22,34 @@ export function TemplatesPage() {
   const [models, setModels] = useState<string[]>([]);
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
   const [templateName, setTemplateName] = useState('Untitled Template');
+  const [currentTemplateId, setCurrentTemplateId] = useState<string | null>(null);
+  const [savedTemplates, setSavedTemplates] = useState<SavedTemplate[]>([]);
+  const [showTemplateList, setShowTemplateList] = useState(false);
+  const [previewContent, setPreviewContent] = useState<{ content: string; title: string } | null>(null);
+  const [editingBoxId, setEditingBoxId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadIndices();
     loadModels();
+    loadSavedTemplates();
+    loadActiveTemplate();
   }, []);
+
+  const loadSavedTemplates = () => {
+    const templates = templateStorage.getAllTemplates();
+    setSavedTemplates(templates);
+  };
+
+  const loadActiveTemplate = () => {
+    const activeId = templateStorage.getActiveTemplateId();
+    if (activeId) {
+      const template = templateStorage.getTemplate(activeId);
+      if (template) {
+        loadTemplate(template);
+      }
+    }
+  };
 
   const loadIndices = async () => {
     try {
@@ -77,6 +94,10 @@ export function TemplatesPage() {
 
   const updateBoxSize = (id: string, size: 'small' | 'medium' | 'large' | 'xlarge') => {
     setBoxes(boxes.map((box) => (box.id === id ? { ...box, size } : box)));
+  };
+
+  const updateBoxResponse = (id: string, response: string) => {
+    setBoxes(boxes.map((box) => (box.id === id ? { ...box, response } : box)));
   };
 
   const toggleIndex = (indexName: string) => {
@@ -176,8 +197,106 @@ export function TemplatesPage() {
     URL.revokeObjectURL(url);
   };
 
+  // New template management functions
+  const saveCurrentTemplate = () => {
+    const template = templateStorage.saveTemplate({
+      id: currentTemplateId || undefined,
+      name: templateName,
+      boxes: boxes.map(box => ({
+        id: box.id,
+        prompt: box.prompt,
+        response: box.response,
+        size: box.size,
+        isGenerating: false,
+      })),
+      selectedIndices,
+      model: selectedModel,
+    });
+    
+    setCurrentTemplateId(template.id);
+    templateStorage.setActiveTemplateId(template.id);
+    loadSavedTemplates();
+    alert('Template saved successfully!');
+  };
+
+  const loadTemplate = (template: SavedTemplate) => {
+    setTemplateName(template.name);
+    setBoxes(template.boxes.map(box => ({ ...box, isGenerating: false })));
+    setSelectedIndices(template.selectedIndices);
+    setSelectedModel(template.model);
+    setCurrentTemplateId(template.id);
+    templateStorage.setActiveTemplateId(template.id);
+    setShowTemplateList(false);
+  };
+
+  const createNewTemplate = () => {
+    setTemplateName('Untitled Template');
+    setBoxes([{ id: Date.now().toString(), prompt: '', response: '', size: 'medium', isGenerating: false }]);
+    setSelectedIndices([]);
+    setCurrentTemplateId(null);
+    templateStorage.setActiveTemplateId(null);
+  };
+
+  const deleteTemplate = (templateId: string) => {
+    if (confirm('Are you sure you want to delete this template?')) {
+      templateStorage.deleteTemplate(templateId);
+      loadSavedTemplates();
+      if (currentTemplateId === templateId) {
+        createNewTemplate();
+      }
+    }
+  };
+
+  const handleImportTemplate = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const template = await templateStorage.importTemplate(file);
+      loadTemplate(template);
+      loadSavedTemplates();
+      alert('Template imported successfully!');
+    } catch (error) {
+      alert('Failed to import template: ' + (error as Error).message);
+    }
+    
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const openHtmlPreview = (boxId: string) => {
+    const box = boxes.find(b => b.id === boxId);
+    if (box && box.response) {
+      setPreviewContent({
+        content: box.response,
+        title: `Preview: ${box.prompt.slice(0, 50)}${box.prompt.length > 50 ? '...' : ''}`,
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Hidden file input for import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json"
+        onChange={handleImportTemplate}
+        className="hidden"
+      />
+
+      {/* HTML Preview Modal */}
+      {previewContent && (
+        <HtmlPreviewModal
+          isOpen={!!previewContent}
+          onClose={() => setPreviewContent(null)}
+          content={previewContent.content}
+          title={previewContent.title}
+        />
+      )}
+
       {/* Header */}
       <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -193,34 +312,141 @@ export function TemplatesPage() {
 
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => addBox('small')}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 text-sm"
+              onClick={createNewTemplate}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center space-x-2 text-sm"
+              title="New Template"
             >
               <FiPlus className="w-4 h-4" />
-              <span>Small</span>
+              <span>New</span>
             </button>
             <button
-              onClick={() => addBox('medium')}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 text-sm"
-            >
-              <FiPlus className="w-4 h-4" />
-              <span>Medium</span>
-            </button>
-            <button
-              onClick={() => addBox('large')}
+              onClick={() => setShowTemplateList(!showTemplateList)}
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2 text-sm"
+              title="View Saved Templates"
             >
-              <FiPlus className="w-4 h-4" />
-              <span>Large</span>
+              <FiList className="w-4 h-4" />
+              <span>Templates ({savedTemplates.length})</span>
             </button>
             <button
-              onClick={() => addBox('xlarge')}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2 text-sm"
+              onClick={saveCurrentTemplate}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 text-sm"
+              title="Save Current Template"
             >
-              <FiPlus className="w-4 h-4" />
-              <span>XLarge</span>
+              <FiSave className="w-4 h-4" />
+              <span>Save</span>
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 text-sm"
+              title="Import Template"
+            >
+              <FiUpload className="w-4 h-4" />
+              <span>Import</span>
+            </button>
+            <button
+              onClick={exportTemplate}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2 text-sm"
+              title="Export Template"
+            >
+              <FiDownload className="w-4 h-4" />
+              <span>Export</span>
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Saved Templates List */}
+      {showTemplateList && (
+        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Saved Templates</h3>
+            <button
+              onClick={() => setShowTemplateList(false)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <FiX className="w-5 h-5 text-gray-600" />
+            </button>
+          </div>
+          
+          {savedTemplates.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">No saved templates yet</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {savedTemplates.map((template) => (
+                <div
+                  key={template.id}
+                  className={`p-4 border-2 rounded-lg transition-all cursor-pointer ${
+                    currentTemplateId === template.id
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-blue-300 bg-white'
+                  }`}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1" onClick={() => loadTemplate(template)}>
+                      <h4 className="font-semibold text-gray-900 truncate">{template.name}</h4>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {template.boxes.length} boxes • {template.model}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        Updated: {new Date(template.updatedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteTemplate(template.id);
+                      }}
+                      className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors ml-2"
+                      title="Delete template"
+                    >
+                      <FiTrash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {currentTemplateId === template.id && (
+                    <div className="mt-2 flex items-center text-xs text-blue-600">
+                      <FiCheck className="w-3 h-3 mr-1" />
+                      <span>Currently Active</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Add Box Buttons */}
+      <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Add Template Box</h3>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => addBox('small')}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 text-sm"
+          >
+            <FiPlus className="w-4 h-4" />
+            <span>Small</span>
+          </button>
+          <button
+            onClick={() => addBox('medium')}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 text-sm"
+          >
+            <FiPlus className="w-4 h-4" />
+            <span>Medium</span>
+          </button>
+          <button
+            onClick={() => addBox('large')}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2 text-sm"
+          >
+            <FiPlus className="w-4 h-4" />
+            <span>Large</span>
+          </button>
+          <button
+            onClick={() => addBox('xlarge')}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2 text-sm"
+          >
+            <FiPlus className="w-4 h-4" />
+            <span>XLarge</span>
+          </button>
         </div>
       </div>
 
@@ -305,11 +531,11 @@ export function TemplatesPage() {
           </button>
 
           <button
-            onClick={exportTemplate}
+            onClick={saveCurrentTemplate}
             className="px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 font-medium"
           >
             <FiSave className="w-5 h-5" />
-            <span>Export Template</span>
+            <span>Save to Storage</span>
           </button>
         </div>
       </div>
@@ -376,20 +602,53 @@ export function TemplatesPage() {
 
               {/* Response Display */}
               <div className="flex-1 overflow-hidden">
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Response
-                </label>
-                <div className="h-full bg-white border border-gray-300 rounded-lg p-3 overflow-y-auto text-sm text-gray-800 whitespace-pre-wrap">
-                  {box.isGenerating ? (
-                    <div className="flex items-center justify-center h-full text-gray-500">
-                      <FiLoader className="w-6 h-6 animate-spin" />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-medium text-gray-700">
+                    Response
+                  </label>
+                  {box.response && (
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => setEditingBoxId(editingBoxId === box.id ? null : box.id)}
+                        className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                        title={editingBoxId === box.id ? "View mode" : "Edit mode"}
+                      >
+                        {editingBoxId === box.id ? (
+                          <FiEye className="w-3.5 h-3.5" />
+                        ) : (
+                          <FiEdit2 className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => openHtmlPreview(box.id)}
+                        className="p-1 text-purple-600 hover:bg-purple-50 rounded transition-colors"
+                        title="Preview as HTML"
+                      >
+                        <FiEye className="w-3.5 h-3.5" />
+                      </button>
                     </div>
-                  ) : box.response ? (
-                    box.response
-                  ) : (
-                    <span className="text-gray-400 italic">No response yet</span>
                   )}
                 </div>
+                {editingBoxId === box.id ? (
+                  <textarea
+                    value={box.response}
+                    onChange={(e) => updateBoxResponse(box.id, e.target.value)}
+                    className="w-full h-full border border-gray-300 rounded-lg p-3 text-sm text-gray-800 font-mono resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Response will appear here..."
+                  />
+                ) : (
+                  <div className="h-full bg-white border border-gray-300 rounded-lg p-3 overflow-y-auto text-sm text-gray-800 whitespace-pre-wrap">
+                    {box.isGenerating ? (
+                      <div className="flex items-center justify-center h-full text-gray-500">
+                        <FiLoader className="w-6 h-6 animate-spin" />
+                      </div>
+                    ) : box.response ? (
+                      box.response
+                    ) : (
+                      <span className="text-gray-400 italic">No response yet</span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           ))}
