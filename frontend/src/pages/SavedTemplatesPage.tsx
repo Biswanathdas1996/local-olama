@@ -126,24 +126,24 @@ export function SavedTemplatesPage() {
   };
 
   return (
-    <div className="h-full flex flex-col p-4 space-y-4">
+    <div className="h-full flex flex-col p-2 sm:p-4 space-y-3 sm:space-y-4">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 rounded-lg shadow-xl p-4">
-        <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 rounded-lg shadow-xl p-3 sm:p-4">
+        <div className="flex items-center justify-between flex-wrap gap-2 sm:gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-              <FiFileText className="w-6 h-6" />
+            <h1 className="text-lg sm:text-2xl font-bold text-white flex items-center gap-2">
+              <FiFileText className="w-5 h-5 sm:w-6 sm:h-6" />
               Saved Templates
             </h1>
-            <p className="text-white/80 text-sm mt-1">
+            <p className="text-white/80 text-xs sm:text-sm mt-1">
               {templates.length} template{templates.length !== 1 ? 's' : ''} saved
             </p>
           </div>
 
           <div className="flex items-center gap-2">
-            <label className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all flex items-center gap-2 text-sm font-medium cursor-pointer backdrop-blur-sm border border-white/30">
-              <FiUpload className="w-4 h-4" />
-              <span>Import</span>
+            <label className="px-3 sm:px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium cursor-pointer backdrop-blur-sm border border-white/30">
+              <FiUpload className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Import</span>
               <input
                 type="file"
                 accept=".json"
@@ -153,63 +153,64 @@ export function SavedTemplatesPage() {
             </label>
             <button
               onClick={() => navigate('/templates')}
-              className="px-4 py-2 bg-white text-purple-600 hover:bg-gray-100 rounded-lg transition-all flex items-center gap-2 text-sm font-medium shadow-lg"
+              className="px-3 sm:px-4 py-2 bg-white text-purple-600 hover:bg-gray-100 rounded-lg transition-all flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium shadow-lg"
             >
-              <FiEdit2 className="w-4 h-4" />
-              <span>Create New</span>
+              <FiEdit2 className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Create New</span>
+              <span className="sm:hidden">New</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Filters and Search */}
-      <div className="bg-white rounded-lg shadow-md border border-gray-200 p-3">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="bg-white rounded-lg shadow-md border border-gray-200 p-2 sm:p-3">
+        <div className="flex items-center justify-between gap-2 sm:gap-3 flex-wrap">
           {/* Search */}
-          <div className="flex-1 min-w-[200px] max-w-md relative">
-            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <div className="flex-1 min-w-[150px] sm:min-w-[200px] max-w-md relative">
+            <FiSearch className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3 sm:w-4 sm:h-4" />
             <input
               type="text"
-              placeholder="Search templates..."
+              placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+              className="w-full pl-8 sm:pl-10 pr-2 sm:pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-xs sm:text-sm"
             />
           </div>
 
           {/* Controls */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             {/* Sort */}
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortBy)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+              className="px-2 sm:px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-xs sm:text-sm"
             >
-              <option value="updated">Recently Updated</option>
-              <option value="created">Recently Created</option>
-              <option value="name">Name (A-Z)</option>
-              <option value="boxes">Box Count</option>
+              <option value="updated">Recent</option>
+              <option value="created">Created</option>
+              <option value="name">Name</option>
+              <option value="boxes">Boxes</option>
             </select>
 
             {/* View Mode */}
             <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-2 rounded transition-all ${
+                className={`p-1.5 sm:p-2 rounded transition-all ${
                   viewMode === 'grid' ? 'bg-white shadow-sm text-purple-600' : 'text-gray-500 hover:text-gray-700'
                 }`}
                 title="Grid View"
               >
-                <FiGrid className="w-4 h-4" />
+                <FiGrid className="w-3 h-3 sm:w-4 sm:h-4" />
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`p-2 rounded transition-all ${
+                className={`p-1.5 sm:p-2 rounded transition-all ${
                   viewMode === 'list' ? 'bg-white shadow-sm text-purple-600' : 'text-gray-500 hover:text-gray-700'
                 }`}
                 title="List View"
               >
-                <FiList className="w-4 h-4" />
+                <FiList className="w-3 h-3 sm:w-4 sm:h-4" />
               </button>
             </div>
           </div>
@@ -217,11 +218,11 @@ export function SavedTemplatesPage() {
       </div>
 
       {/* Templates Display */}
-      <div className="flex-1 overflow-y-auto bg-gradient-to-br from-gray-50 to-purple-50/30 rounded-lg border border-gray-200 p-4">
+      <div className="flex-1 overflow-y-auto bg-gradient-to-br from-gray-50 to-purple-50/30 rounded-lg border border-gray-200 p-2 sm:p-4">
         {filteredAndSortedTemplates.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-400">
-            <FiFileText className="w-16 h-16 mb-3 opacity-50" />
-            <p className="text-lg font-medium">
+            <FiFileText className="w-12 h-12 sm:w-16 sm:h-16 mb-2 sm:mb-3 opacity-50" />
+            <p className="text-base sm:text-lg font-medium">
               {searchQuery ? 'No templates found' : 'No saved templates yet'}
             </p>
             <p className="text-sm">

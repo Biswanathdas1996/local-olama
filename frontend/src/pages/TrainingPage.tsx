@@ -218,36 +218,36 @@ export function TrainingPage() {
 
   return (
     <div className="h-full">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Model Training</h1>
-        <p className="text-base text-gray-600">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">Model Training</h1>
+        <p className="text-sm sm:text-base text-gray-600">
           Fine-tune models using various parameter-efficient techniques
         </p>
       </div>
 
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-800">{error}</p>
+        <div className="mb-3 sm:mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-sm sm:text-base text-red-800">{error}</p>
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="mb-6">
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
+      {/* Tabs - Mobile optimized */}
+      <div className="mb-4 sm:mb-6">
+        <div className="border-b border-gray-200 overflow-x-auto">
+          <nav className="-mb-px flex space-x-4 sm:space-x-8">
             <button
               onClick={() => setActiveTab('create-data')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+              className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
                 activeTab === 'create-data'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              Create Training Data
+              Create Data
             </button>
             <button
               onClick={() => setActiveTab('train')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+              className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
                 activeTab === 'train'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -257,13 +257,13 @@ export function TrainingPage() {
             </button>
             <button
               onClick={() => setActiveTab('jobs')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+              className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
                 activeTab === 'jobs'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              Training Jobs
+              Jobs
             </button>
           </nav>
         </div>
@@ -275,20 +275,20 @@ export function TrainingPage() {
       )}
 
       {activeTab === 'train' && (
-        <div className="space-y-6">{/* Training Techniques */}
-      <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-          <FiCpu className="mr-2" />
+        <div className="space-y-4 sm:space-y-6">{/* Training Techniques */}
+      <div className="bg-white rounded-lg sm:rounded-xl shadow-md p-3 sm:p-6 mb-4 sm:mb-6">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center">
+          <FiCpu className="mr-2 w-4 h-4 sm:w-5 sm:h-5" />
           Available Training Techniques
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {techniques.map((technique) => (
             <div
               key={technique.name}
-              className="border border-gray-200 rounded-lg p-4 hover:border-blue-400 transition-colors"
+              className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:border-blue-400 transition-colors"
             >
-              <h3 className="font-semibold text-lg text-gray-900 mb-2">{technique.name}</h3>
-              <p className="text-sm text-gray-600 mb-3">{technique.description}</p>
+              <h3 className="font-semibold text-base sm:text-lg text-gray-900 mb-1 sm:mb-2">{technique.name}</h3>
+              <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3">{technique.description}</p>
               <div className="space-y-1 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="text-gray-500">Memory:</span>
@@ -311,15 +311,16 @@ export function TrainingPage() {
       </div>
 
       {/* Start New Training */}
-      <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-900">Start New Training</h2>
+      <div className="bg-white rounded-lg sm:rounded-xl shadow-md p-3 sm:p-6 mb-4 sm:mb-6">
+        <div className="flex items-center justify-between mb-3 sm:mb-4 gap-2">
+          <h2 className="text-base sm:text-xl font-semibold text-gray-900">Start New Training</h2>
           <button
             onClick={() => setShowNewTrainingForm(!showNewTrainingForm)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+            className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center text-xs sm:text-sm whitespace-nowrap"
           >
-            <FiPlay className="mr-2" />
-            {showNewTrainingForm ? 'Hide Form' : 'New Training'}
+            <FiPlay className="mr-1 sm:mr-2 w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">{showNewTrainingForm ? 'Hide Form' : 'New Training'}</span>
+            <span className="sm:hidden">{showNewTrainingForm ? 'Hide' : 'New'}</span>
           </button>
         </div>
 
