@@ -17,14 +17,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 tech-grid">
       <Header />
       
       <div className="flex h-[calc(100vh-4rem)]">
         {/* Mobile sidebar backdrop */}
         {sidebarOpen && (
           <div
-            className="fixed inset-0 bg-gray-900 bg-opacity-50 z-40 lg:hidden"
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden animate-fadeIn"
             onClick={() => setSidebarOpen(false)}
           />
         )}
@@ -33,20 +33,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <aside
           className={`${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          } fixed lg:static inset-y-0 left-0 z-50 w-64 sm:w-72 bg-white shadow-xl lg:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col border-r border-gray-200`}
+          } fixed lg:static inset-y-0 left-0 z-50 w-64 sm:w-72 glass-card tech-shadow-lg lg:translate-x-0 transition-all duration-300 ease-out flex flex-col border-r border-blue-100/50`}
         >
           {/* Mobile close button */}
-          <div className="lg:hidden flex justify-end p-3 sm:p-4">
+          <div className="lg:hidden flex justify-end p-3 sm:p-4 border-b border-blue-100/50">
             <button
               onClick={() => setSidebarOpen(false)}
-              className="text-gray-500 hover:text-gray-700 p-1 hover:bg-gray-100 rounded-lg transition-colors"
+              className="text-slate-600 hover:text-slate-900 p-1.5 hover:bg-blue-50/50 rounded-lg transition-all"
             >
               <FiX className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-3 sm:px-4 py-4 sm:py-6 space-y-1.5 sm:space-y-2">
+          <nav className="flex-1 px-3 sm:px-4 py-4 sm:py-6 space-y-1">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
               const Icon = item.icon;
@@ -56,28 +56,48 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   key={item.name}
                   to={item.href}
                   onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-medium transition-all text-sm sm:text-base ${
+                  className={`group flex items-center space-x-2.5 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-medium transition-all text-sm sm:text-base relative overflow-hidden ${
                     isActive
-                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/50'
-                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white tech-shadow neon-blue'
+                      : 'text-slate-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-700'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ${isActive ? 'text-white' : 'text-gray-500'}`} />
-                  <span className="truncate">{item.name}</span>
+                  {isActive && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-indigo-400/20 animate-pulse-slow" />
+                  )}
+                  <Icon className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 relative z-10 transition-transform group-hover:scale-110 ${
+                    isActive ? 'text-white drop-shadow-lg' : 'text-blue-600'
+                  }`} />
+                  <span className="truncate relative z-10">{item.name}</span>
+                  {isActive && (
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white/30 rounded-l-full" />
+                  )}
                 </Link>
               );
             })}
           </nav>
 
           {/* Footer */}
-          <div className="p-3 sm:p-4 border-t border-gray-200">
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg sm:rounded-xl p-3 sm:p-4">
-              <p className="text-xs sm:text-sm font-semibold text-gray-900 mb-1 truncate">Local LLM Platform</p>
-              <p className="text-xs text-gray-600">v1.0.0</p>
-              <div className="mt-2 flex items-center space-x-1.5 sm:space-x-2 flex-wrap">
-                <span className="text-xs text-gray-500">🔒 Offline</span>
-                <span className="text-xs text-gray-500">•</span>
-                <span className="text-xs text-gray-500">🚀 Private</span>
+          <div className="p-3 sm:p-4 border-t border-blue-100/50">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-3 sm:p-4 border border-blue-200/50 tech-shadow relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-400/10 to-indigo-400/10 rounded-full blur-2xl" />
+              <div className="relative z-10">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                  <p className="text-xs sm:text-sm font-bold gradient-text truncate">Local LLM Platform</p>
+                </div>
+                <p className="text-xs text-slate-600 font-mono">v1.0.0</p>
+                <div className="mt-2 flex items-center space-x-1.5 sm:space-x-2 flex-wrap text-xs text-slate-500">
+                  <span className="flex items-center space-x-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                    <span>Offline</span>
+                  </span>
+                  <span>•</span>
+                  <span className="flex items-center space-x-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                    <span>Private</span>
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -86,15 +106,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/* Main content */}
         <main className="flex-1 overflow-auto">
           {/* Mobile menu button */}
-          <div className="lg:hidden sticky top-0 z-10 bg-white border-b border-gray-200 px-3 sm:px-4 py-2.5 sm:py-3 flex items-center">
+          <div className="lg:hidden sticky top-0 z-10 glass-card border-b border-blue-100/50 px-3 sm:px-4 py-2.5 sm:py-3 flex items-center tech-shadow">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="text-gray-500 hover:text-gray-700 p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+              className="text-slate-600 hover:text-slate-900 p-1.5 hover:bg-blue-50 rounded-lg transition-all"
               aria-label="Open menu"
             >
               <FiMenu className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
-            <span className="ml-3 text-sm sm:text-base font-semibold text-gray-900">
+            <span className="ml-3 text-sm sm:text-base font-semibold gradient-text">
               {navigation.find(item => item.href === location.pathname)?.name || 'Menu'}
             </span>
           </div>
