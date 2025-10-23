@@ -1,0 +1,19 @@
+# Modelfile for test-lyyanee_ollama
+# Base model: tinyllama
+# Training technique: lora
+# Created: 2025-10-23T16:34:48.914403
+
+FROM tinyllama
+
+# Model parameters
+PARAMETER temperature 0.7
+PARAMETER top_p 0.9
+PARAMETER top_k 40
+PARAMETER repeat_penalty 1.1
+
+# System message
+SYSTEM You are a helpful AI assistant. This model was fine-tuned using lora technique.
+
+# Note: This Modelfile uses the base tinyllama model.
+# The fine-tuned weights are stored at: models\trained\test-lyyanee
+# For full adapter integration, use the model via the API with the adapter path.

@@ -155,11 +155,42 @@ desktop.ini
 .env.*.local
 *.local
 
-# Project Specific - Vector Store Data
-data/vector_store/*.sqlite3
-data/vector_store/*.sqlite3-journal
-data/vector_store/*/
+# Project Specific - Data and Models
+# Vector Store Data
+data/vector_store/
+data/vector_store_backup/
 data/keyword_index/
+
+# Training Data (keep structure, ignore actual data)
+data/training_data/*.jsonl
+data/custom_datasets/*/
+!data/custom_datasets/.gitkeep
+data/custom_datasets/datasets_metadata.json
+
+# Model Files and Checkpoints (typically large)
+models/checkpoints/*/
+models/trained/*/
+models/ollama_converted/*/
+!models/checkpoints/.gitkeep
+!models/trained/.gitkeep
+!models/ollama_converted/.gitkeep
+
+# Model weights and binaries
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+*.pb
+*.h5
+*.keras
+
+# Large data files
+*.parquet
+*.arrow
+*.feather
+*.msgpack
 
 # Logs
 *.log
@@ -178,3 +209,6 @@ coverage.xml
 tmp/
 temp/
 *.tmp
+
+# Ollama models (if stored locally)
+.ollama/

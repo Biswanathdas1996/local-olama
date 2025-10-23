@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router';
-import { FiMessageSquare, FiFileText, FiCpu, FiMenu, FiX, FiLayout, FiBookmark } from 'react-icons/fi';
+import { FiMessageSquare, FiFileText, FiCpu, FiMenu, FiX, FiLayout, FiBookmark, FiZap } from 'react-icons/fi';
 import { useState } from 'react';
 import { Header } from './Header';
 
@@ -7,6 +7,7 @@ const navigation = [
   { name: 'Chat', href: '/', icon: FiMessageSquare },
   { name: 'BYOD', href: '/documents', icon: FiFileText },
   { name: 'Models', href: '/models', icon: FiCpu },
+  { name: 'Training', href: '/training', icon: FiZap },
   { name: 'Templates', href: '/templates', icon: FiLayout },
   { name: 'Saved Templates', href: '/saved-templates', icon: FiBookmark },
 ];

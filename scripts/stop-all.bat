@@ -23,14 +23,26 @@ for /f "tokens=5" %%a in ('netstat -aon ^| findstr :11434') do (
 REM Kill all Ollama-related processes
 taskkill /F /IM "ollama.exe" >nul 2>nul
 if %errorlevel% equ 0 (
-    echo [OK] Ollama server stopped
     set /a PROCESSES_KILLED+=1
-) else (
-    echo [INFO] Ollama server not running
+)
+
+taskkill /F /IM "ollama app.exe" >nul 2>nul
+if %errorlevel% equ 0 (
+    set /a PROCESSES_KILLED+=1
 )
 
 REM Stop ollama_llama_server if running
 taskkill /F /IM "ollama_llama_server.exe" >nul 2>nul
+if %errorlevel% equ 0 (
+    set /a PROCESSES_KILLED+=1
+)
+
+REM Check if any Ollama process was killed
+if %PROCESSES_KILLED% gtr 0 (
+    echo [OK] Ollama server stopped
+) else (
+    echo [INFO] Ollama server not running
+)
 
 echo.
 

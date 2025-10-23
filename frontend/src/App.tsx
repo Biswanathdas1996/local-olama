@@ -5,6 +5,7 @@ import { DocumentsPage } from './pages/DocumentsPage';
 import { ModelsPage } from './pages/ModelsPage';
 import { TemplatesPage } from './pages/TemplatesPage';
 import { SavedTemplatesPage } from './pages/SavedTemplatesPage';
+import { TrainingPage } from './pages/TrainingPage';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Route path="/" element={<ChatPage />} />
           <Route path="/documents" element={<DocumentsPage />} />
           <Route path="/models" element={<ModelsPage />} />
+          <Route path="/training" element={<TrainingPage />} />
           <Route path="/templates" element={<TemplatesPage />} />
           <Route path="/saved-templates" element={<SavedTemplatesPage />} />
         </Routes>

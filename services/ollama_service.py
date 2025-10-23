@@ -4,6 +4,7 @@ Handles all communication with Ollama HTTP API and CLI operations.
 """
 import asyncio
 import subprocess
+import re
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 
@@ -43,6 +44,8 @@ class OllamaService:
         self.settings = get_settings()
         self.client: Optional[AsyncClient] = None
         self._client_lock = asyncio.Lock()
+        # Track active downloads: model_name -> progress info
+        self.active_downloads: Dict[str, Dict[str, Any]] = {}
     
     async def get_client(self) -> AsyncClient:
         """Get or create async HTTP client."""
@@ -203,7 +206,7 @@ class OllamaService:
     
     async def download_model(self, model_name: str) -> Dict[str, str]:
         """
-        Download a model using Ollama CLI.
+        Download a model using Ollama CLI with progress tracking.
         
         Args:
             model_name: Name of the model to download
@@ -214,39 +217,27 @@ class OllamaService:
         Note:
             This runs the Ollama CLI command in the background.
             For large models, this may take significant time.
+            Progress can be tracked using get_download_progress().
         """
         try:
             logger.info("model_download_started", model=model_name)
             
-            # Use Ollama CLI to pull the model
-            # Running in subprocess to avoid blocking
-            process = await asyncio.create_subprocess_exec(
-                "ollama",
-                "pull",
-                model_name,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
+            # Initialize progress tracking
+            self.active_downloads[model_name] = {
+                "status": "downloading",
+                "progress": 0,
+                "message": "Starting download...",
+                "started_at": datetime.now().isoformat()
+            }
             
-            stdout, stderr = await process.communicate()
+            # Start download in background task
+            asyncio.create_task(self._download_model_background(model_name))
             
-            if process.returncode == 0:
-                logger.info("model_download_completed", model=model_name)
-                return {
-                    "status": "success",
-                    "model_name": model_name,
-                    "message": f"Model '{model_name}' downloaded successfully"
-                }
-            else:
-                error_msg = stderr.decode() if stderr else "Unknown error"
-                logger.error(
-                    "model_download_failed",
-                    model=model_name,
-                    error=error_msg
-                )
-                raise OllamaServiceError(
-                    f"Failed to download model: {error_msg}"
-                )
+            return {
+                "status": "initiated",
+                "model_name": model_name,
+                "message": f"Download of '{model_name}' has been initiated"
+            }
                 
         except FileNotFoundError:
             logger.error("ollama_cli_not_found")
@@ -256,6 +247,116 @@ class OllamaService:
         except Exception as e:
             logger.error("model_download_error", model=model_name, error=str(e))
             raise OllamaServiceError(f"Model download failed: {str(e)}")
+    
+    async def _download_model_background(self, model_name: str):
+        """
+        Background task to download model and track progress.
+        
+        Args:
+            model_name: Name of the model to download
+        """
+        try:
+            # Use Ollama CLI to pull the model
+            process = await asyncio.create_subprocess_exec(
+                "ollama",
+                "pull",
+                model_name,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            
+            # Monitor stdout for progress
+            if process.stdout:
+                async for line in process.stdout:
+                    line_str = line.decode().strip()
+                    if line_str:
+                        # Parse progress from output
+                        self._update_download_progress(model_name, line_str)
+                        logger.debug("download_progress", model=model_name, line=line_str)
+            
+            # Wait for process to complete
+            await process.wait()
+            
+            if process.returncode == 0:
+                logger.info("model_download_completed", model=model_name)
+                self.active_downloads[model_name] = {
+                    "status": "completed",
+                    "progress": 100,
+                    "message": f"Model '{model_name}' downloaded successfully",
+                    "completed_at": datetime.now().isoformat()
+                }
+            else:
+                stderr_output = ""
+                if process.stderr:
+                    stderr_output = await process.stderr.read()
+                    stderr_output = stderr_output.decode()
+                
+                error_msg = stderr_output if stderr_output else "Unknown error"
+                logger.error(
+                    "model_download_failed",
+                    model=model_name,
+                    error=error_msg
+                )
+                self.active_downloads[model_name] = {
+                    "status": "failed",
+                    "progress": 0,
+                    "message": f"Download failed: {error_msg}",
+                    "error": error_msg
+                }
+                
+        except Exception as e:
+            logger.error("model_download_error", model=model_name, error=str(e))
+            self.active_downloads[model_name] = {
+                "status": "failed",
+                "progress": 0,
+                "message": f"Download failed: {str(e)}",
+                "error": str(e)
+            }
+    
+    def _update_download_progress(self, model_name: str, line: str):
+        """
+        Parse and update download progress from CLI output.
+        
+        Args:
+            model_name: Name of the model being downloaded
+            line: Output line from ollama pull command
+        """
+        if model_name not in self.active_downloads:
+            return
+        
+        # Try to extract percentage from output
+        # Ollama outputs lines like "pulling manifest" or "downloading digestname"
+        # and shows progress bars
+        progress_match = re.search(r'(\d+)%', line)
+        if progress_match:
+            progress = int(progress_match.group(1))
+            self.active_downloads[model_name]["progress"] = progress
+            self.active_downloads[model_name]["message"] = line
+        else:
+            # Update message even if no percentage found
+            self.active_downloads[model_name]["message"] = line
+    
+    def get_download_progress(self, model_name: str) -> Optional[Dict[str, Any]]:
+        """
+        Get current download progress for a model.
+        
+        Args:
+            model_name: Name of the model
+            
+        Returns:
+            Dictionary with progress information or None if not downloading
+        """
+        return self.active_downloads.get(model_name)
+    
+    def clear_download_progress(self, model_name: str):
+        """
+        Clear download progress tracking for a model.
+        
+        Args:
+            model_name: Name of the model
+        """
+        if model_name in self.active_downloads:
+            del self.active_downloads[model_name]
     
     async def delete_model(self, model_name: str) -> Dict[str, str]:
         """

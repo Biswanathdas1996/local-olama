@@ -3,7 +3,7 @@ import { FiDownload, FiTrash2, FiRefreshCw, FiCpu, FiHardDrive } from 'react-ico
 import { useModels } from '../hooks/useModels';
 
 export function ModelManager() {
-  const { models, loading, error, fetchModels, downloadModel, deleteModel } = useModels();
+  const { models, loading, error, downloadProgress, fetchModels, downloadModel, deleteModel } = useModels();
   const [downloadName, setDownloadName] = useState('');
   const [downloading, setDownloading] = useState(false);
 
@@ -11,15 +11,19 @@ export function ModelManager() {
     e.preventDefault();
     if (!downloadName.trim()) return;
 
+    const trimmedName = downloadName.trim();
+    
     try {
       setDownloading(true);
-      await downloadModel(downloadName.trim());
+      await downloadModel(trimmedName);
       setDownloadName('');
-      alert(`Model "${downloadName}" download initiated successfully!`);
+      // Don't show alert immediately - let the progress tracker handle it
     } catch (err) {
       alert(`Failed to download model: ${err instanceof Error ? err.message : 'Unknown error'}`);
-    } finally {
       setDownloading(false);
+    } finally {
+      // Reset downloading state after a short delay to allow progress tracking to start
+      setTimeout(() => setDownloading(false), 500);
     }
   };
 
@@ -104,6 +108,65 @@ export function ModelManager() {
           </div>
         </form>
       </div>
+
+      {/* Download Progress Indicators */}
+      {Object.entries(downloadProgress).length > 0 && (
+        <div className="mb-6 sm:mb-8 space-y-3">
+          {Object.entries(downloadProgress).map(([modelName, progress]) => (
+            <div
+              key={modelName}
+              className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-purple-100 shadow-md"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-semibold text-gray-900 text-sm sm:text-base">
+                  Downloading: {modelName}
+                </h4>
+                <span className={`text-xs sm:text-sm font-medium px-2.5 py-1 rounded-lg ${
+                  progress.status === 'completed' 
+                    ? 'bg-green-100 text-green-700' 
+                    : progress.status === 'failed' 
+                    ? 'bg-red-100 text-red-700' 
+                    : 'bg-blue-100 text-blue-700'
+                }`}>
+                  {progress.status === 'completed' 
+                    ? '✓ Complete' 
+                    : progress.status === 'failed' 
+                    ? '✗ Failed' 
+                    : `${progress.progress}%`}
+                </span>
+              </div>
+              
+              {/* Progress Bar */}
+              {progress.status !== 'failed' && (
+                <div className="w-full bg-gray-200 rounded-full h-2 sm:h-2.5 mb-2 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-300 ${
+                      progress.status === 'completed'
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-500'
+                        : 'bg-gradient-to-r from-blue-500 to-indigo-500'
+                    }`}
+                    style={{ width: `${progress.progress}%` }}
+                  >
+                    {progress.status === 'downloading' && progress.progress > 0 && (
+                      <div className="w-full h-full bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-pulse" />
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                {progress.message}
+              </p>
+              
+              {progress.error && (
+                <p className="text-xs sm:text-sm text-red-600 mt-1 font-medium">
+                  Error: {progress.error}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Models List */}
       <div>
