@@ -71,7 +71,7 @@ Preferred communication style: Simple, everyday language.
   - Compact button labels and icons on mobile
   - Responsive grid layouts (single column on mobile, multi-column on larger screens)
 
-**Routing**: React Router v7 for client-side navigation with routes for Chat, Documents (BYOD), Models, Training, Templates, Saved Templates, and Connect.
+**Routing**: React Router v7 for client-side navigation with routes for Chat, Documents (BYOD), Models, Training, Templates, Saved Templates, Connect, and Landing Page (standalone).
 
 **State Management**: React hooks-based state management with custom hooks:
 - `useGeneration`: Handles chat message state and API calls for text generation
@@ -93,6 +93,16 @@ Preferred communication style: Simple, everyday language.
   - Smooth keyboard handling (Enter to send, Shift+Enter for new line)
   - Safe-bottom padding for iOS notch devices
   - Typing indicator with bouncing dots
+- **Modern Landing Page** (October 2025):
+  - Hero section with generated AI server room imagery
+  - Business problems solved section (4 key enterprise challenges)
+  - Security & privacy section with generated security illustration
+  - Product features showcase (6 core features)
+  - Technical architecture diagram with tech stack visualization
+  - Industry use cases (Healthcare, Legal, Finance, Research)
+  - "Why choose this platform" value proposition
+  - Generated tech images using AI image generation
+  - Standalone layout (no sidebar) for marketing presentation
 - **Connect Page** (October 2025):
   - QR code generator for easy mobile access
   - Automatic IPv4 address detection and display
