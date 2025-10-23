@@ -230,10 +230,10 @@ export function ChatInterface() {
               <span className="mr-2">📄</span>
               Output Configuration
             </h4>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
               <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Output Format
+                  Output Format Type
                 </label>
                 <select
                   value={options.output_format || 'TEXT'}
@@ -254,14 +254,14 @@ export function ChatInterface() {
               
               <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Output Template
+                  Output Format
                 </label>
                 <textarea
                   value={options.output_template || ''}
                   onChange={(e) => setOptions({ ...options, output_template: e.target.value })}
                   placeholder="Enter template structure (optional)&#10;Example: &#10;{&#10;  &quot;title&quot;: &quot;&quot;,&#10;  &quot;summary&quot;: &quot;&quot;&#10;}"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-sm font-mono"
-                  rows={4}
+                  rows={6}
                 />
                 <p className="mt-2 text-xs text-gray-500">
                   Provide a template to structure the output
