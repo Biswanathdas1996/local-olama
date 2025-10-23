@@ -6,6 +6,7 @@ import { ModelsPage } from './pages/ModelsPage';
 import { TemplatesPage } from './pages/TemplatesPage';
 import { SavedTemplatesPage } from './pages/SavedTemplatesPage';
 import { TrainingPage } from './pages/TrainingPage';
+import { ConnectPage } from './pages/ConnectPage';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Route path="/training" element={<TrainingPage />} />
           <Route path="/templates" element={<TemplatesPage />} />
           <Route path="/saved-templates" element={<SavedTemplatesPage />} />
+          <Route path="/connect" element={<ConnectPage />} />
         </Routes>
       </Layout>
     </Router>
