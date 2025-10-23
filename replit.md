@@ -49,6 +49,16 @@ Preferred communication style: Simple, everyday language.
 
 **UI Library**: TailwindCSS with custom design system including responsive breakpoints and mobile-first approach.
 
+**Design System** (Updated October 2025):
+- Modern tech-focused aesthetic with glassmorphism effects
+- Color palette: Blue/Indigo/Purple/Cyan gradients with neon accents
+- Glass-morphic cards with translucent backgrounds and backdrop blur
+- Tech shadows combining slate and colored glows
+- Floating decorative gradient orbs for depth
+- Compact layouts with reduced padding and efficient spacing
+- Custom animations: float, glow-pulse, slide-in, shimmer
+- Responsive design optimized for mobile, tablet, and desktop
+
 **Routing**: React Router v7 for client-side navigation with routes for Chat, Documents (BYOD), Models, Training, Templates, and Saved Templates.
 
 **State Management**: React hooks-based state management with custom hooks:
@@ -63,6 +73,7 @@ Preferred communication style: Simple, everyday language.
 - Template system with grid/list views and localStorage persistence
 - Training data creation from PDFs with job status monitoring
 - Dataset management for fine-tuning workflows
+- Modern UI with glassmorphism, gradient accents, and tech-inspired animations
 
 **API Communication**: Axios-based service layer with centralized error handling and 5-minute timeout for model operations.
 
