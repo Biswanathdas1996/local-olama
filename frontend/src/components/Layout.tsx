@@ -1,11 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
-import { FiMessageSquare, FiFileText, FiCpu, FiMenu, FiX, FiLayout, FiBookmark, FiZap, FiWifi, FiHome } from 'react-icons/fi';
+import { FiMessageSquare, FiFileText, FiCpu, FiMenu, FiX, FiLayout, FiBookmark, FiZap, FiWifi } from 'react-icons/fi';
 import { useState } from 'react';
 import { Header } from './Header';
 
 const navigation = [
-  { name: 'Home', href: '/', icon: FiHome },
-  { name: 'Chat', href: '/chat', icon: FiMessageSquare },
+  { name: 'Chat', href: '/', icon: FiMessageSquare },
   { name: 'BYOD', href: '/documents', icon: FiFileText },
   { name: 'Models', href: '/models', icon: FiCpu },
   { name: 'Training', href: '/training', icon: FiZap },
