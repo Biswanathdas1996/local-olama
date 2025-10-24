@@ -76,10 +76,12 @@ export function ChatInterface() {
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
-    // Use instant scroll for better performance
+    // Use requestAnimationFrame for smoother scroll
     const container = messagesContainerRef.current;
     if (container) {
-      container.scrollTop = container.scrollHeight;
+      requestAnimationFrame(() => {
+        container.scrollTop = container.scrollHeight;
+      });
     }
   }, [messages, loading]);
 
@@ -195,7 +197,7 @@ export function ChatInterface() {
   };
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <div className="flex h-[100dvh] lg:h-full overflow-hidden">
       {/* Session Sidebar */}
       <SessionSidebar
         sessions={sessions}
@@ -209,7 +211,7 @@ export function ChatInterface() {
       />
 
       {/* Main Chat Area */}
-      <div className="flex-1 min-w-0 bg-gradient-to-b from-gray-100 to-gray-50 flex flex-col rounded-lg shadow-lg overflow-hidden">
+      <div className="flex-1 min-w-0 bg-gradient-to-b from-gray-100 to-gray-50 flex flex-col rounded-lg shadow-lg overflow-hidden h-full">
         {/* WhatsApp-style Header - Fixed */}
         <div className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gradient-to-r from-teal-600 to-teal-700 flex items-center justify-between shadow-md flex-shrink-0">
           <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
@@ -482,11 +484,12 @@ export function ChatInterface() {
       {/* WhatsApp-style Chat Background - Scrollable */}
       <div 
         ref={messagesContainerRef}
-        className="chat-messages-container flex-1 overflow-y-auto overflow-x-hidden px-2 sm:px-4 py-3 sm:py-4 space-y-1.5 sm:space-y-2"
+        className="chat-messages-container flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-2 sm:px-4 py-3 sm:py-4 space-y-1.5 sm:space-y-2 relative"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d1d5db' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
           scrollbarWidth: 'thin',
           scrollbarColor: 'rgba(20, 184, 166, 0.4) transparent',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
         {error && (
@@ -607,7 +610,7 @@ export function ChatInterface() {
       )}
 
       {/* WhatsApp-style Input Area - Fixed */}
-      <form onSubmit={handleSubmit} className="px-2 sm:px-3 py-2 sm:py-2.5 bg-gray-100 border-t border-gray-200 flex-shrink-0 safe-bottom">
+      <form onSubmit={handleSubmit} className="px-2 sm:px-3 py-2 sm:py-2.5 bg-gray-100 border-t border-gray-200 flex-shrink-0 safe-bottom shadow-lg">
         <div className="flex items-end space-x-2 max-w-5xl mx-auto">
           <div className="flex-1 bg-white rounded-3xl shadow-sm border border-gray-200 focus-within:border-teal-500 transition-all">
             <textarea
