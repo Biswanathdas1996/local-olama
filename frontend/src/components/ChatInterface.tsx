@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { FiSend, FiTrash2, FiSettings, FiCheck, FiChevronDown, FiMenu } from 'react-icons/fi';
+import { FiSend, FiTrash2, FiSettings, FiCheck, FiMenu } from 'react-icons/fi';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -33,12 +33,17 @@ export function ChatInterface() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [availableIndices, setAvailableIndices] = useState<IndexInfo[]>([]);
   const [loadingIndices, setLoadingIndices] = useState(false);
-  const [showScrollButton, setShowScrollButton] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Debug log
+  useEffect(() => {
+    console.log('ChatInterface: Messages changed:', messages);
+    console.log('ChatInterface: Current session:', currentSession);
+  }, [messages, currentSession]);
 
   // Persist settings in localStorage
   const [selectedModel, setSelectedModel] = useLocalStorage<string>('chat-selected-model', '');
@@ -74,42 +79,18 @@ export function ChatInterface() {
     fetchIndices();
   }, []);
 
-  // Auto-scroll to bottom on new messages
+  // Scroll to bottom only when new message is added
   useEffect(() => {
-    // Use requestAnimationFrame for smoother scroll
-    const container = messagesContainerRef.current;
-    if (container) {
-      requestAnimationFrame(() => {
-        container.scrollTop = container.scrollHeight;
-      });
-    }
-  }, [messages, loading]);
-
-  // Detect if user has scrolled up
-  useEffect(() => {
-    const container = messagesContainerRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = container;
-      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-      setShowScrollButton(!isNearBottom && messages.length > 0);
-    };
-
-    container.addEventListener('scroll', handleScroll, { passive: true });
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [messages.length]);
-
-  const scrollToBottom = (behavior: ScrollBehavior = 'auto') => {
-    const container = messagesContainerRef.current;
-    if (container) {
-      if (behavior === 'auto') {
-        container.scrollTop = container.scrollHeight;
-      } else {
-        messagesEndRef.current?.scrollIntoView({ behavior });
+    if (messages.length > 0) {
+      const container = messagesContainerRef.current;
+      if (container) {
+        // Small delay to ensure DOM is updated
+        setTimeout(() => {
+          container.scrollTop = container.scrollHeight;
+        }, 100);
       }
     }
-  };
+  }, [messages.length]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,6 +111,8 @@ export function ChatInterface() {
       content: userPrompt,
       timestamp: new Date(),
     };
+    console.log('ChatInterface: Adding user message:', userMessage);
+    console.log('ChatInterface: Current session:', currentSession);
     addMessage(userMessage);
 
     setLoading(true);
@@ -156,6 +139,7 @@ export function ChatInterface() {
           eval_count: response.eval_count,
         },
       };
+      console.log('ChatInterface: Adding assistant message:', assistantMessage);
       addMessage(assistantMessage);
     } catch (err) {
       console.error('Generation error:', err);
@@ -597,17 +581,6 @@ export function ChatInterface() {
         )}
         <div ref={messagesEndRef} />
       </div>
-
-      {/* Scroll to bottom button */}
-      {showScrollButton && (
-        <button
-          onClick={() => scrollToBottom('smooth')}
-          className="fixed bottom-20 sm:bottom-24 right-4 sm:right-8 bg-teal-600 text-white rounded-full p-3 shadow-lg hover:bg-teal-700 active:bg-teal-800 transition-all z-10 animate-fadeIn"
-          aria-label="Scroll to bottom"
-        >
-          <FiChevronDown className="w-5 h-5" />
-        </button>
-      )}
 
       {/* WhatsApp-style Input Area - Fixed */}
       <form onSubmit={handleSubmit} className="px-2 sm:px-3 py-2 sm:py-2.5 bg-gray-100 border-t border-gray-200 flex-shrink-0 safe-bottom shadow-lg">

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 import type { ChatSession, ChatMessage } from '../types/session';
 
@@ -6,8 +6,8 @@ export function useSessions() {
   const [sessions, setSessions] = useLocalStorage<ChatSession[]>('chat-sessions', []);
   const [currentSessionId, setCurrentSessionId] = useLocalStorage<string>('current-session-id', '');
 
-  // Initialize first session if none exist
-  const initializeSession = useCallback(() => {
+  // Initialize first session if none exist - only run once on mount
+  useEffect(() => {
     if (sessions.length === 0) {
       const newSession: ChatSession = {
         id: generateId(),
@@ -16,21 +16,18 @@ export function useSessions() {
         updatedAt: Date.now(),
         messages: [],
       };
+      console.log('Initializing first session:', newSession);
       setSessions([newSession]);
       setCurrentSessionId(newSession.id);
-      return newSession;
-    }
-    
-    if (!currentSessionId && sessions.length > 0) {
+    } else if (!currentSessionId && sessions.length > 0) {
+      console.log('Setting current session to first session:', sessions[0].id);
       setCurrentSessionId(sessions[0].id);
-      return sessions[0];
     }
-    
-    return sessions.find(s => s.id === currentSessionId) || sessions[0];
-  }, [sessions, currentSessionId, setSessions, setCurrentSessionId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   // Get current session
-  const currentSession = sessions.find(s => s.id === currentSessionId) || initializeSession();
+  const currentSession = sessions.find(s => s.id === currentSessionId);
 
   // Create new session
   const createSession = useCallback(() => {
@@ -91,6 +88,10 @@ export function useSessions() {
 
   // Add message to current session
   const addMessage = useCallback((message: ChatMessage) => {
+    console.log('=== addMessage called ===');
+    console.log('Message to add:', message);
+    console.log('Current session ID:', currentSessionId);
+    
     // Ensure timestamp is a Date object when storing
     const messageToStore = {
       ...message,
@@ -99,19 +100,37 @@ export function useSessions() {
     
     // Use functional update to avoid stale closure issues
     setSessions(prevSessions => {
-      const updatedSessions = prevSessions.map(s => 
-        s.id === currentSessionId
-          ? { 
-              ...s, 
-              messages: [...s.messages, messageToStore as any],
-              updatedAt: Date.now(),
-              // Auto-rename based on first user message
-              name: s.messages.length === 0 && message.role === 'user' 
-                ? truncateText(message.content, 30)
-                : s.name
-            }
-          : s
-      );
+      console.log('Previous sessions:', prevSessions);
+      
+      // Get the current session ID at the time of update
+      const activeSessionId = currentSessionId || prevSessions[0]?.id;
+      
+      if (!activeSessionId) {
+        console.error('No active session ID found!');
+        return prevSessions;
+      }
+      
+      console.log('Active session ID:', activeSessionId);
+      
+      const updatedSessions = prevSessions.map(s => {
+        if (s.id === activeSessionId) {
+          const newMessages = [...s.messages, messageToStore as any];
+          console.log('Adding message to session. Old messages:', s.messages.length, 'New messages:', newMessages.length);
+          return { 
+            ...s, 
+            messages: newMessages,
+            updatedAt: Date.now(),
+            // Auto-rename based on first user message
+            name: s.messages.length === 0 && message.role === 'user' 
+              ? truncateText(message.content, 30)
+              : s.name
+          };
+        }
+        return s;
+      });
+      
+      console.log('Updated sessions:', updatedSessions);
+      console.log('=== addMessage done ===');
       
       return updatedSessions;
     });

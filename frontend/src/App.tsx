@@ -14,13 +14,13 @@ function App() {
     <Router>
       <Routes>
         {/* Landing page without Layout (standalone marketing page) */}
-        <Route path="/landing" element={<LandingPage />} />
+        <Route path="/" element={<LandingPage />} />
         
         {/* App routes with Layout */}
         <Route path="/*" element={
           <Layout>
             <Routes>
-              <Route path="/" element={<ChatPage />} />
+              <Route path="/chat" element={<ChatPage />} />
               <Route path="/documents" element={<DocumentsPage />} />
               <Route path="/models" element={<ModelsPage />} />
               <Route path="/training" element={<TrainingPage />} />
