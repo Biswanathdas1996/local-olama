@@ -5,7 +5,7 @@ export function Header() {
   const { health } = useHealth();
 
   return (
-    <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-30">
+    <header className="hidden lg:block bg-white border-b border-gray-200 shadow-sm sticky top-0 z-30">
       <div className="mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-2.5 md:py-3">
         <div className="flex items-center justify-between gap-1.5 sm:gap-2 md:gap-3">
           {/* Logo and Title Section */}

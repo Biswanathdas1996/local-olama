@@ -5,7 +5,7 @@ Provides endpoint for generating text using local LLM models.
 from fastapi import APIRouter, HTTPException, status
 from typing import List
 
-from schemas import GenerateRequest, GenerateResponse, ErrorResponse
+from schemas import GenerateRequest, GenerateResponse, SourceCitation, ErrorResponse
 from services import (
     get_ollama_service,
     get_context_handler,
@@ -33,7 +33,7 @@ async def fetch_relevant_context(
     query: str,
     indices: List[str],
     top_k: int = 5
-) -> str:
+) -> tuple[str, List[SourceCitation]]:
     """
     Fetch relevant context from specified indices using RAG.
     
@@ -43,11 +43,11 @@ async def fetch_relevant_context(
         top_k: Number of top results to retrieve per index
         
     Returns:
-        Formatted context string
+        Tuple of (formatted context string, list of source citations)
     """
     if not RAG_AVAILABLE:
         logger.warning("RAG components not available. Skipping context retrieval.")
-        return ""
+        return "", []
     
     try:
         settings = get_settings()
@@ -90,11 +90,33 @@ async def fetch_relevant_context(
         
         if not all_results:
             logger.info("No relevant context found in specified indices")
-            return ""
+            return "", []
         
         # Sort by score and take top results
         all_results.sort(key=lambda x: x['score'], reverse=True)
         top_results = all_results[:top_k * len(indices)]
+        
+        # Build source citations
+        sources = []
+        for i, result in enumerate(top_results, 1):
+            source_name = result.get('source', 'unknown')
+            metadata = result.get('metadata', {})
+            score = result.get('score', 0)
+            text = result.get('text', '').strip()
+            
+            # Extract page number if available
+            page_number = metadata.get('page', metadata.get('slide'))
+            
+            # Create excerpt (first 150 chars)
+            excerpt = text[:150] + "..." if len(text) > 150 else text
+            
+            sources.append(SourceCitation(
+                source_type="document",
+                source_name=source_name,
+                page_number=page_number,
+                relevance_score=round(score, 4),
+                excerpt=excerpt
+            ))
         
         # Format context
         context_parts = ["Here is relevant context from your documents:\n"]
@@ -102,17 +124,21 @@ async def fetch_relevant_context(
             source = result.get('source', 'unknown')
             text = result.get('text', '').strip()
             score = result.get('score', 0)
+            metadata = result.get('metadata', {})
+            page_num = metadata.get('page', metadata.get('slide'))
             
-            context_parts.append(f"\n[Context {i} from {source} (relevance: {score:.2f})]")
+            # Add page reference to context
+            page_ref = f", Page {page_num}" if page_num else ""
+            context_parts.append(f"\n[Context {i} from {source}{page_ref} (relevance: {score:.2f})]")
             context_parts.append(text)
         
         context_parts.append("\n\nBased on the above context, please answer the following question:")
         
-        return "\n".join(context_parts)
+        return "\n".join(context_parts), sources
         
     except Exception as e:
         logger.error(f"Failed to fetch relevant context: {e}", exc_info=True)
-        return ""
+        return "", []
 
 
 @router.post(
@@ -160,11 +186,13 @@ async def generate_text(request: GenerateRequest) -> GenerateResponse:
         
         # Check if RAG is requested
         augmented_prompt = request.prompt
+        sources = []
+        
         if request.indices and len(request.indices) > 0:
             logger.info(f"RAG enabled with indices: {request.indices}")
             
             # Fetch relevant context from indices
-            relevant_context = await fetch_relevant_context(
+            relevant_context, rag_sources = await fetch_relevant_context(
                 query=request.prompt,
                 indices=request.indices,
                 top_k=5  # Configurable
@@ -173,9 +201,19 @@ async def generate_text(request: GenerateRequest) -> GenerateResponse:
             if relevant_context:
                 # Augment the prompt with context
                 augmented_prompt = f"{relevant_context}\n\n{request.prompt}"
+                sources.extend(rag_sources)
                 logger.info(f"Prompt augmented with context from {len(request.indices)} indices")
             else:
                 logger.warning("No relevant context found, using original prompt")
+        
+        # Add model source citation for non-RAG or combined responses
+        model_citation = SourceCitation(
+            source_type="model",
+            source_name=request.model,
+            page_number=None,
+            relevance_score=None,
+            excerpt=f"AI-generated response using {request.model}"
+        )
         
         # Apply output format and template instructions
         output_format = request.output_format or "TEXT"
@@ -240,10 +278,34 @@ async def generate_text(request: GenerateRequest) -> GenerateResponse:
         ollama_service = get_ollama_service()
         result = await ollama_service.generate(modified_request)
         
+        # Get the generated response
+        generated_text = result.get("response", "")
+        
+        # Append citation section to the response
+        if sources:
+            citation_text = "\n\n---\n**Sources:**\n"
+            for i, source in enumerate(sources, 1):
+                if source.source_type == "document":
+                    page_ref = f", Page {source.page_number}" if source.page_number else ""
+                    citation_text += f"\n{i}. {source.source_name}{page_ref}"
+                    if source.relevance_score:
+                        citation_text += f" (relevance: {source.relevance_score:.2f})"
+            
+            # Add model reference
+            citation_text += f"\n\n*Response generated by AI model: {request.model}*"
+            generated_text += citation_text
+        else:
+            # For non-RAG responses, add disclaimer
+            generated_text += f"\n\n---\n*Note: This response was generated by the AI model '{request.model}'. Please verify important information from authoritative sources.*"
+        
+        # Add model citation to sources list
+        sources.append(model_citation)
+        
         # Build response
         return GenerateResponse(
-            response=result.get("response", ""),
+            response=generated_text,
             model=result.get("model", request.model),
+            sources=sources if sources else None,
             context=result.get("context"),
             total_duration=result.get("total_duration"),
             load_duration=result.get("load_duration"),

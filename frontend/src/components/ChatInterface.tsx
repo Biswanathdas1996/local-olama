@@ -132,6 +132,8 @@ export function ChatInterface() {
         role: 'assistant',
         content: response.response,
         timestamp: new Date(),
+        model: response.model,
+        sources: response.sources,
         stats: {
           total_duration: response.total_duration,
           load_duration: response.load_duration,
@@ -181,7 +183,7 @@ export function ChatInterface() {
   };
 
   return (
-    <div id="chat-interface-root" className="flex h-[100dvh] lg:h-full overflow-hidden">
+    <div id="chat-interface-root" className="flex h-[100dvh] lg:h-full overflow-hidden bg-gradient-to-br from-slate-50 via-teal-50/30 to-slate-100">
       {/* Session Sidebar */}
       <SessionSidebar
         sessions={sessions}
@@ -195,26 +197,26 @@ export function ChatInterface() {
       />
 
       {/* Main Chat Area */}
-      <div id="main-chat-area" className="flex-1 min-w-0 bg-gradient-to-b from-gray-100 to-gray-50 flex flex-col overflow-hidden h-full">
+      <div id="main-chat-area" className="flex-1 min-w-0 bg-transparent flex flex-col overflow-hidden h-full">
         {/* Modern Compact Header */}
-        <div id="chat-header" className="px-2.5 sm:px-3 py-2 bg-gradient-to-r from-teal-600 to-teal-700 flex items-center justify-between shadow-md flex-shrink-0">
-          <div id="header-left-section" className="flex items-center space-x-1.5 sm:space-x-2 min-w-0 flex-1">
+        <div id="chat-header" className="px-3 sm:px-4 py-3 bg-gradient-to-r from-teal-600 via-teal-500 to-cyan-600 flex items-center justify-between shadow-lg border-b border-teal-400/20 flex-shrink-0 backdrop-blur-sm">
+          <div id="header-left-section" className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
             {/* Menu Button for Mobile */}
             <button
               onClick={() => setShowSidebar(!showSidebar)}
-              className="lg:hidden p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 transition-all text-white"
+              className="lg:hidden p-2 rounded-xl hover:bg-white/15 active:bg-white/25 transition-all duration-200 text-white shadow-sm hover:shadow-md"
               title="Toggle sessions"
             >
-              <FiMenu className="w-4 h-4" />
+              <FiMenu className="w-5 h-5" />
             </button>
-            <div id="ai-logo" className="w-7 h-7 sm:w-8 sm:h-8 bg-white rounded-full flex items-center justify-center text-teal-600 font-bold text-xs sm:text-sm flex-shrink-0 shadow-sm">
+            <div id="ai-logo" className="w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-xl flex items-center justify-center text-teal-600 font-bold text-sm sm:text-base flex-shrink-0 shadow-md ring-2 ring-white/20">
               AI
             </div>
-          <div id="model-selector-container" className="min-w-0 flex-1">
+          <div id="model-selector-container" className="min-w-0 flex-1 max-w-xs">
             <select
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
-              className="bg-white/20 text-white border-0 rounded-md px-2 py-1 text-xs font-medium focus:outline-none focus:bg-white/30 transition-all w-full truncate cursor-pointer"
+              className="bg-white/95 text-teal-900 border-0 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-white/50 transition-all w-full truncate cursor-pointer shadow-sm hover:bg-white"
               disabled={loading}
             >
               {models.length === 0 ? (
@@ -229,22 +231,22 @@ export function ChatInterface() {
             </select>
           </div>
         </div>
-        <div id="header-right-section" className="flex items-center space-x-0.5 sm:space-x-1 flex-shrink-0">
+        <div id="header-right-section" className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className="p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 transition-all text-white"
+            className="p-2 rounded-xl hover:bg-white/15 active:bg-white/25 transition-all duration-200 text-white shadow-sm hover:shadow-md"
             title="Settings"
             aria-label="Toggle settings"
           >
-            <FiSettings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <FiSettings className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
           <button
             onClick={clearMessages}
-            className="p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 transition-all text-white"
+            className="p-2 rounded-xl hover:bg-white/15 active:bg-white/25 transition-all duration-200 text-white shadow-sm hover:shadow-md"
             disabled={loading}
             title="Clear chat"
           >
-            <FiTrash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <FiTrash2 className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
       </div>
@@ -469,31 +471,37 @@ export function ChatInterface() {
       <div 
         id="messages-container"
         ref={messagesContainerRef}
-        className="chat-messages-container flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-2 sm:px-3 py-2 sm:py-3 space-y-1 sm:space-y-1.5 relative"
+        className="chat-messages-container flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-3 sm:px-4 py-3 sm:py-4 space-y-2 sm:space-y-3 relative"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d1d5db' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          backgroundImage: `
+            radial-gradient(circle at 20% 50%, rgba(20, 184, 166, 0.03) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.03) 0%, transparent 50%),
+            url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2314b8a6' fill-opacity='0.02'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")
+          `,
           scrollbarWidth: 'thin',
-          scrollbarColor: 'rgba(20, 184, 166, 0.4) transparent',
+          scrollbarColor: 'rgba(20, 184, 166, 0.3) transparent',
           WebkitOverflowScrolling: 'touch',
         }}
       >
         {error && (
-          <div id="error-message-wrapper" className="mx-auto max-w-md">
-            <div id="error-message" className="p-2 bg-red-50 border border-red-200 text-red-700 rounded-lg shadow-sm text-xs">
-              <p className="font-medium">Error</p>
-              <p className="text-xs mt-0.5">{error}</p>
+          <div id="error-message-wrapper" className="mx-auto max-w-2xl">
+            <div id="error-message" className="p-4 bg-red-50 border-l-4 border-red-500 text-red-800 rounded-xl shadow-md text-sm">
+              <p className="font-semibold flex items-center">
+                <span className="mr-2">⚠️</span> Error
+              </p>
+              <p className="text-sm mt-1">{error}</p>
             </div>
           </div>
         )}
 
         {messages.length === 0 ? (
           <div id="empty-messages-wrapper" className="flex items-center justify-center h-full">
-            <div id="empty-messages-content" className="text-center py-6">
-              <div id="empty-messages-icon" className="inline-block p-3 bg-white rounded-full shadow-md mb-2">
-                <FiSend className="w-6 h-6 text-teal-600" />
+            <div id="empty-messages-content" className="text-center py-8 px-4">
+              <div id="empty-messages-icon" className="inline-flex p-5 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-2xl shadow-lg mb-4 ring-4 ring-teal-100">
+                <FiSend className="w-8 h-8 text-white" />
               </div>
-              <p className="text-sm font-medium text-gray-700 mb-0.5">No messages yet</p>
-              <p className="text-xs text-gray-500">Start a conversation with your AI!</p>
+              <p className="text-base font-semibold text-gray-800 mb-1">Start a Conversation</p>
+              <p className="text-sm text-gray-500">Send a message to begin chatting with your AI assistant</p>
             </div>
           </div>
         ) : (
@@ -503,21 +511,21 @@ export function ChatInterface() {
               className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-slideDown`}
             >
               <div
-                className={`relative max-w-[88%] sm:max-w-[80%] md:max-w-2xl rounded-lg px-2 sm:px-2.5 py-1.5 sm:py-1.5 shadow-sm ${
+                className={`relative max-w-[85%] sm:max-w-[75%] md:max-w-2xl rounded-2xl px-4 py-3 shadow-md hover:shadow-lg transition-all duration-200 ${
                   message.role === 'user'
-                    ? 'bg-gradient-to-br from-teal-500 to-teal-600 text-white rounded-tr-none'
-                    : 'bg-white text-gray-800 rounded-tl-none border border-gray-200'
+                    ? 'bg-gradient-to-br from-teal-500 via-teal-600 to-cyan-600 text-white rounded-tr-sm'
+                    : 'bg-white text-gray-800 rounded-tl-sm border border-gray-100'
                 }`}
               >
                 {/* Message content */}
-                <div id={`message-content-${message.id}`} className={`text-xs sm:text-sm leading-relaxed ${message.role === 'user' ? 'prose-invert' : ''}`}>
+                <div id={`message-content-${message.id}`} className={`text-sm sm:text-base leading-relaxed ${message.role === 'user' ? 'prose-invert' : ''}`}>
                   {message.role === 'user' ? (
                     <p className="whitespace-pre-wrap break-words m-0">{message.content}</p>
                   ) : (
                     <ReactMarkdown
-                      className="prose prose-sm max-w-none"
+                      className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-800 prose-strong:text-gray-900"
                       components={{
-                        p: ({ children }) => <p className="m-0 mb-2 last:mb-0">{children}</p>,
+                        p: ({ children }) => <p className="m-0 mb-3 last:mb-0">{children}</p>,
                         code({ node, className, children, ...props }: any) {
                           const match = /language-(\w+)/.exec(className || '');
                           const inline = !match;
@@ -526,19 +534,19 @@ export function ChatInterface() {
                               style={vscDarkPlus}
                               language={match[1]}
                               PreTag="div"
-                              className="text-xs sm:text-sm my-2 rounded-lg overflow-hidden"
+                              className="text-sm my-3 rounded-xl overflow-hidden shadow-md"
                               {...props}
                             >
                               {String(children).replace(/\n$/, '')}
                             </CodeBlock>
                           ) : (
-                            <code className="bg-gray-100 text-teal-700 px-1.5 py-0.5 rounded text-xs sm:text-sm font-mono" {...props}>
+                            <code className="bg-teal-50 text-teal-700 px-2 py-0.5 rounded-md text-sm font-mono border border-teal-100" {...props}>
                               {children}
                             </code>
                           );
                         },
-                        ul: ({ children }) => <ul className="my-1 ml-4 space-y-0.5">{children}</ul>,
-                        ol: ({ children }) => <ol className="my-1 ml-4 space-y-0.5">{children}</ol>,
+                        ul: ({ children }) => <ul className="my-2 ml-5 space-y-1">{children}</ul>,
+                        ol: ({ children }) => <ol className="my-2 ml-5 space-y-1">{children}</ol>,
                         li: ({ children }) => <li className="text-sm">{children}</li>,
                       }}
                     >
@@ -547,19 +555,57 @@ export function ChatInterface() {
                   )}
                 </div>
 
+                {/* Source Citations for assistant messages */}
+                {message.role === 'assistant' && message.sources && message.sources.length > 0 && (
+                  <div id={`message-sources-${message.id}`} className="mt-3 pt-3 border-t border-gray-200">
+                    <p className="text-xs font-semibold text-gray-600 mb-2 flex items-center">
+                      <span className="mr-1">📚</span>
+                      Sources:
+                    </p>
+                    <div className="space-y-1.5">
+                      {message.sources
+                        .filter((source: any) => source.source_type === 'document')
+                        .map((source: any, idx: number) => (
+                          <div key={idx} className="text-xs text-gray-600 bg-gray-50 rounded-lg px-2 py-1.5 border border-gray-200">
+                            <span className="font-medium text-gray-700">
+                              {idx + 1}. {source.source_name}
+                            </span>
+                            {source.page_number && (
+                              <span className="text-teal-600 ml-1">
+                                (Page {source.page_number})
+                              </span>
+                            )}
+                            {source.relevance_score && (
+                              <span className="text-gray-500 ml-1 text-[10px]">
+                                • Relevance: {(source.relevance_score * 100).toFixed(0)}%
+                              </span>
+                            )}
+                          </div>
+                        ))
+                      }
+                      {message.sources.some((s: any) => s.source_type === 'model') && (
+                        <div className="text-[10px] text-gray-500 italic mt-1">
+                          Generated by {message.sources.find((s: any) => s.source_type === 'model')?.source_name || message.model}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Compact timestamp and status */}
-                <div id={`message-meta-${message.id}`} className={`flex items-center justify-end gap-0.5 mt-0.5 text-[10px] ${
-                  message.role === 'user' ? 'text-white/70' : 'text-gray-400'
+                <div id={`message-meta-${message.id}`} className={`flex items-center justify-end gap-1 mt-2 text-xs ${
+                  message.role === 'user' ? 'text-white/80' : 'text-gray-500'
                 }`}>
                   <span>{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   {message.role === 'user' && (
-                    <FiCheck className="w-2.5 h-2.5" />
+                    <FiCheck className="w-3 h-3" />
                   )}
                 </div>
 
                 {/* Subtle stats for assistant messages */}
                 {message.role === 'assistant' && message.stats && (
-                  <div id={`message-stats-${message.id}`} className="text-[10px] text-gray-400 mt-0.5 italic">
+                  <div id={`message-stats-${message.id}`} className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                    <span className="inline-block w-1.5 h-1.5 bg-teal-400 rounded-full"></span>
                     {formatDuration(message.stats.total_duration)}
                   </div>
                 )}
@@ -571,11 +617,11 @@ export function ChatInterface() {
         {/* Compact typing indicator */}
         {loading && (
           <div id="typing-indicator-wrapper" className="flex justify-start animate-slideDown">
-            <div id="typing-indicator" className="bg-white rounded-lg rounded-tl-none px-2.5 py-2 shadow-sm border border-gray-200">
-              <div id="typing-dots" className="flex space-x-1">
-                <div className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                <div className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                <div className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            <div id="typing-indicator" className="bg-white rounded-2xl rounded-tl-sm px-5 py-3 shadow-md border border-gray-100">
+              <div id="typing-dots" className="flex space-x-1.5">
+                <div className="w-2 h-2 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-2 h-2 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-2 h-2 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
               </div>
             </div>
           </div>
@@ -584,32 +630,33 @@ export function ChatInterface() {
       </div>
 
       {/* Compact Modern Input Area */}
-      <form id="chat-input-form" onSubmit={handleSubmit} className="px-2 sm:px-3 py-1.5 sm:py-2 bg-gradient-to-r from-gray-50 to-white border-t border-gray-200 flex-shrink-0 safe-bottom shadow-md">
-        <div id="input-container" className="flex items-end space-x-1.5 max-w-5xl mx-auto">
-          <div id="textarea-wrapper" className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 focus-within:border-teal-500 focus-within:shadow-md transition-all">
+      <form id="chat-input-form" onSubmit={handleSubmit} className="px-3 sm:px-4 py-3 sm:py-4 bg-white/80 backdrop-blur-md border-t border-gray-200 flex-shrink-0 safe-bottom shadow-lg">
+        <div id="input-container" className="flex items-end space-x-2 sm:space-x-3 max-w-5xl mx-auto">
+          <div id="textarea-wrapper" className="flex-1 bg-white rounded-2xl shadow-md border-2 border-gray-200 focus-within:border-teal-500 focus-within:shadow-xl transition-all duration-200">
             <textarea
               ref={inputRef}
               value={prompt}
               onChange={handleTextareaChange}
               onKeyDown={handleKeyDown}
-              placeholder="Type a message..."
-              className="w-full px-3 py-2 bg-transparent focus:outline-none resize-none text-sm rounded-2xl"
+              placeholder="Type your message..."
+              className="w-full px-4 py-3 bg-transparent focus:outline-none resize-none text-base rounded-2xl text-gray-800 placeholder-gray-400"
               rows={1}
               disabled={loading || !selectedModel}
               style={{
-                maxHeight: '100px',
-                minHeight: '44px',
-                height: 'auto'
+                maxHeight: '120px',
+                minHeight: '48px',
+                height: 'auto',
+                fontSize: '16px'
               }}
             />
           </div>
           <button
             type="submit"
             disabled={loading || !prompt.trim() || !selectedModel}
-            className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-teal-500 to-teal-600 text-white rounded-full hover:from-teal-600 hover:to-teal-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center shadow-md hover:shadow-lg flex-shrink-0"
+            className="w-11 h-11 sm:w-12 sm:h-12 bg-gradient-to-br from-teal-500 via-teal-600 to-cyan-600 text-white rounded-2xl hover:from-teal-600 hover:via-teal-700 hover:to-cyan-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl flex-shrink-0 ring-2 ring-teal-100"
             aria-label="Send message"
           >
-            <FiSend className="w-4 h-4" />
+            <FiSend className="w-5 h-5" />
           </button>
         </div>
       </form>

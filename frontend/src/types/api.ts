@@ -25,9 +25,18 @@ export interface HealthResponse {
   version: string;
 }
 
+export interface SourceCitation {
+  source_type: 'document' | 'model';
+  source_name?: string;
+  page_number?: number;
+  relevance_score?: number;
+  excerpt?: string;
+}
+
 export interface GenerateResponse {
   response: string;
   model: string;
+  sources?: SourceCitation[];
   context?: number[];
   total_duration?: number;
   load_duration?: number;
@@ -73,6 +82,7 @@ export interface Message {
   content: string;
   timestamp: Date;
   model?: string;
+  sources?: SourceCitation[];
   stats?: {
     total_duration?: number;
     prompt_eval_count?: number;

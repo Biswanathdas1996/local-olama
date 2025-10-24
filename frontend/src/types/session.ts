@@ -1,3 +1,5 @@
+import type { SourceCitation } from './api';
+
 export interface ChatSession {
   id: string;
   name: string;
@@ -11,6 +13,8 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  model?: string;
+  sources?: SourceCitation[];
   stats?: {
     total_duration?: number;
     load_duration?: number;
@@ -25,6 +29,8 @@ export interface StoredChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: string | Date;
+  model?: string;
+  sources?: SourceCitation[];
   stats?: {
     total_duration?: number;
     load_duration?: number;
