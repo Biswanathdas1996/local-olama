@@ -32,6 +32,7 @@ torchvision>=0.15.0
 torchaudio>=2.0.0
 transformers>=4.30.0
 huggingface-hub>=0.16.0
+einops>=0.7.0  # Required by nomic-embed-text model
 
 # Vector storage
 chromadb>=0.5.0

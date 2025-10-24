@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     # Server Configuration
     host: str = "localhost"
     port: int = 8000
+    UI_port: int = 5000
     
     # Performance Settings
     max_concurrent_requests: int = 10
@@ -30,11 +31,12 @@ class Settings(BaseSettings):
     max_prompt_size_mb: int = 10
     
     # Document Ingestion & RAG Settings
-    embedding_model: str = "nomic-embed-text-v1.5"  # or 'bge-large', 'bge-base', 'mpnet'
+    embedding_model: str = "minilm"  # Using all-MiniLM-L6-v2 for reliable offline operation
     chunk_size: int = 512  # tokens per chunk (smaller = more accurate retrieval)
     chunk_overlap: int = 100  # token overlap between chunks (20% overlap)
     vector_store_path: str = "./data/vector_store"
     keyword_index_path: str = "./data/keyword_index"
+    embedding_local_only: bool = True  # Force offline mode for embeddings
     
     # Hybrid Search Weights (optimized for accuracy)
     semantic_weight: float = 0.65  # weight for semantic similarity

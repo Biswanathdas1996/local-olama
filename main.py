@@ -2,6 +2,13 @@
 Main FastAPI application.
 Configures and runs the Local LLM Platform with Ollama integration.
 """
+import os
+
+# Force offline mode for Hugging Face and transformers BEFORE any imports
+os.environ['HF_HUB_OFFLINE'] = '1'
+os.environ['TRANSFORMERS_OFFLINE'] = '1'
+os.environ['HF_DATASETS_OFFLINE'] = '1'
+
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 from datetime import datetime
@@ -13,16 +20,30 @@ from fastapi.exceptions import RequestValidationError
 
 from utils.config import get_settings
 from utils.logger import configure_logging, get_logger
+
+# Configure logging early
+configure_logging()
+logger = get_logger(__name__)
+
 from routes import models_router, generate_router
 from routes.ingestion_routes import router as ingestion_router
-from routes.training import router as training_router
+
+# Make training optional (requires additional dependencies)
+try:
+    from routes.training import router as training_router
+    TRAINING_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Training module not available: {e}")
+    logger.warning("Install training dependencies with: pip install datasets>=2.14.0 peft>=0.7.0")
+    TRAINING_AVAILABLE = False
+    training_router = None
+
 from services import get_ollama_service, cleanup_ollama_service
 from schemas import HealthResponse, ErrorResponse
 
 
 # Configure logging before app initialization
-configure_logging()
-logger = get_logger(__name__)
+logger.info("Starting application initialization")
 
 
 @asynccontextmanager
@@ -223,16 +244,16 @@ async def server_info():
             s.connect(('10.255.255.255', 1))
             ipv4_address = s.getsockname()[0]
         except Exception:
-            pass
+            pass 
         finally:
             s.close()
         
-        server_url = f"http://{ipv4_address}:{settings.port}"
+        server_url = f"http://{ipv4_address}:{settings.UI_port}"
         
         return {
             "hostname": hostname,
             "ipv4": ipv4_address,
-            "port": settings.port,
+            "port": settings.UI_port,
             "url": server_url
         }
     except Exception as e:
@@ -240,8 +261,8 @@ async def server_info():
         return {
             "hostname": "localhost",
             "ipv4": "127.0.0.1",
-            "port": settings.port,
-            "url": f"http://127.0.0.1:{settings.port}"
+            "port": settings.UI_port,
+            "url": f"http://127.0.0.1:{settings.UI_port}"
         }
 
 
@@ -268,7 +289,13 @@ async def root():
 app.include_router(models_router)
 app.include_router(generate_router)
 app.include_router(ingestion_router)
-app.include_router(training_router)
+
+# Only include training router if available
+if TRAINING_AVAILABLE and training_router:
+    app.include_router(training_router)
+    logger.info("Training routes registered")
+else:
+    logger.warning("Training routes not available - install dependencies to enable")
 
 
 if __name__ == "__main__":

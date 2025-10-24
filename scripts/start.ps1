@@ -73,6 +73,13 @@ try {
 # Start the application
 Write-Host "`n🚀 Starting Local LLM Platform..." -ForegroundColor Cyan
 Write-Host "======================================" -ForegroundColor Cyan
+
+# Set offline mode for HuggingFace (use cached models only)
+$env:HF_HUB_OFFLINE = "1"
+$env:TRANSFORMERS_OFFLINE = "1"
+$env:HF_DATASETS_OFFLINE = "1"
+Write-Host "✅ Offline mode enabled (using cached models only)" -ForegroundColor Green
+
 Write-Host "`nAPI will be available at:" -ForegroundColor Green
 Write-Host "  • Main API: http://localhost:8000" -ForegroundColor White
 Write-Host "  • Swagger UI: http://localhost:8000/docs" -ForegroundColor White

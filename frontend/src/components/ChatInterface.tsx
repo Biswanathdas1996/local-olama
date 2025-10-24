@@ -1,31 +1,49 @@
 import { useState, useRef, useEffect } from 'react';
-import { FiSend, FiTrash2, FiSettings, FiCheck, FiChevronDown } from 'react-icons/fi';
+import { FiSend, FiTrash2, FiSettings, FiCheck, FiChevronDown, FiMenu } from 'react-icons/fi';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { useGeneration } from '../hooks/useGeneration';
 import { useModels } from '../hooks/useModels';
+import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useSessions } from '../hooks/useSessions';
 import { apiService } from '../services/api';
 import { Modal } from './Modal';
+import { SessionSidebar } from './SessionSidebar';
 import type { GenerationOptions, IndexInfo } from '../types/api';
+import type { ChatMessage } from '../types/session';
 
 const CodeBlock = SyntaxHighlighter as any;
 
 export function ChatInterface() {
-  const { messages, loading, error, generateResponse, clearMessages } = useGeneration();
   const { models } = useModels();
+  const {
+    sessions,
+    currentSession,
+    messages,
+    createSession,
+    switchSession,
+    deleteSession,
+    renameSession,
+    addMessage,
+    clearMessages,
+  } = useSessions();
+
   const [prompt, setPrompt] = useState('');
-  const [selectedModel, setSelectedModel] = useState('');
   const [showSettings, setShowSettings] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
   const [availableIndices, setAvailableIndices] = useState<IndexInfo[]>([]);
-  const [selectedIndices, setSelectedIndices] = useState<string[]>([]);
   const [loadingIndices, setLoadingIndices] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const [options, setOptions] = useState<GenerationOptions>({
+  // Persist settings in localStorage
+  const [selectedModel, setSelectedModel] = useLocalStorage<string>('chat-selected-model', '');
+  const [selectedIndices, setSelectedIndices] = useLocalStorage<string[]>('chat-selected-indices', []);
+  const [options, setOptions] = useLocalStorage<GenerationOptions>('chat-generation-options', {
     max_tokens: 2000,
     temperature: 0.7,
     top_p: 0.9,
@@ -58,7 +76,11 @@ export function ChatInterface() {
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
-    scrollToBottom('auto');
+    // Use instant scroll for better performance
+    const container = messagesContainerRef.current;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
   }, [messages, loading]);
 
   // Detect if user has scrolled up
@@ -72,12 +94,19 @@ export function ChatInterface() {
       setShowScrollButton(!isNearBottom && messages.length > 0);
     };
 
-    container.addEventListener('scroll', handleScroll);
+    container.addEventListener('scroll', handleScroll, { passive: true });
     return () => container.removeEventListener('scroll', handleScroll);
   }, [messages.length]);
 
-  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
-    messagesEndRef.current?.scrollIntoView({ behavior });
+  const scrollToBottom = (behavior: ScrollBehavior = 'auto') => {
+    const container = messagesContainerRef.current;
+    if (container) {
+      if (behavior === 'auto') {
+        container.scrollTop = container.scrollHeight;
+      } else {
+        messagesEndRef.current?.scrollIntoView({ behavior });
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -92,10 +121,45 @@ export function ChatInterface() {
       inputRef.current.style.height = 'auto';
     }
 
+    // Add user message
+    const userMessage: ChatMessage = {
+      id: `msg-${Date.now()}`,
+      role: 'user',
+      content: userPrompt,
+      timestamp: new Date(),
+    };
+    addMessage(userMessage);
+
+    setLoading(true);
+    setError(null);
+
     try {
-      await generateResponse(selectedModel, userPrompt, options, selectedIndices.length > 0 ? selectedIndices : undefined);
+      const response = await apiService.generateText({
+        model: selectedModel,
+        prompt: userPrompt,
+        ...options,
+        indices: selectedIndices.length > 0 ? selectedIndices : undefined,
+      });
+
+      // Add assistant message
+      const assistantMessage: ChatMessage = {
+        id: `msg-${Date.now()}-response`,
+        role: 'assistant',
+        content: response.response,
+        timestamp: new Date(),
+        stats: {
+          total_duration: response.total_duration,
+          load_duration: response.load_duration,
+          prompt_eval_count: response.prompt_eval_count,
+          eval_count: response.eval_count,
+        },
+      };
+      addMessage(assistantMessage);
     } catch (err) {
       console.error('Generation error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to generate response');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -131,13 +195,35 @@ export function ChatInterface() {
   };
 
   return (
-    <div className="bg-gradient-to-b from-gray-100 to-gray-50 flex flex-col h-[100dvh] sm:h-[calc(100vh-8rem)] rounded-none sm:rounded-lg shadow-lg overflow-hidden">
-      {/* WhatsApp-style Header - Fixed */}
-      <div className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gradient-to-r from-teal-600 to-teal-700 flex items-center justify-between shadow-md flex-shrink-0">
-        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white rounded-full flex items-center justify-center text-teal-600 font-bold text-sm sm:text-base flex-shrink-0 shadow-sm">
-            AI
-          </div>
+    <div className="flex h-full overflow-hidden">
+      {/* Session Sidebar */}
+      <SessionSidebar
+        sessions={sessions}
+        currentSessionId={currentSession?.id}
+        onCreateSession={createSession}
+        onSwitchSession={switchSession}
+        onDeleteSession={deleteSession}
+        onRenameSession={renameSession}
+        isOpen={showSidebar}
+        onClose={() => setShowSidebar(false)}
+      />
+
+      {/* Main Chat Area */}
+      <div className="flex-1 min-w-0 bg-gradient-to-b from-gray-100 to-gray-50 flex flex-col rounded-lg shadow-lg overflow-hidden">
+        {/* WhatsApp-style Header - Fixed */}
+        <div className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gradient-to-r from-teal-600 to-teal-700 flex items-center justify-between shadow-md flex-shrink-0">
+          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+            {/* Menu Button for Mobile */}
+            <button
+              onClick={() => setShowSidebar(!showSidebar)}
+              className="lg:hidden p-2 rounded-full hover:bg-white/10 active:bg-white/20 transition-all text-white"
+              title="Toggle sessions"
+            >
+              <FiMenu className="w-5 h-5" />
+            </button>
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white rounded-full flex items-center justify-center text-teal-600 font-bold text-sm sm:text-base flex-shrink-0 shadow-sm">
+              AI
+            </div>
           <div className="min-w-0 flex-1">
             <select
               value={selectedModel}
@@ -396,11 +482,11 @@ export function ChatInterface() {
       {/* WhatsApp-style Chat Background - Scrollable */}
       <div 
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden px-2 sm:px-4 py-3 sm:py-4 space-y-1.5 sm:space-y-2 scroll-smooth"
+        className="chat-messages-container flex-1 overflow-y-auto overflow-x-hidden px-2 sm:px-4 py-3 sm:py-4 space-y-1.5 sm:space-y-2"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d1d5db' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          WebkitOverflowScrolling: 'touch',
-          scrollbarWidth: 'thin'
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgba(20, 184, 166, 0.4) transparent',
         }}
       >
         {error && (
@@ -550,6 +636,7 @@ export function ChatInterface() {
           </button>
         </div>
       </form>
+      </div>
     </div>
   );
 }
