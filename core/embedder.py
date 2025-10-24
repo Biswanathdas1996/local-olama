@@ -4,16 +4,28 @@ Supports enterprise-grade models like nomic-embed-text and BGE for high-accuracy
 """
 
 import logging
+import os
+from pathlib import Path
 from typing import List, Optional, Union
 import numpy as np
 
 try:
     from sentence_transformers import SentenceTransformer
+    import sentence_transformers
     SENTENCE_TRANSFORMERS_AVAILABLE = True
+    # Check if local_files_only is supported (version 2.4.0+)
+    import inspect
+    _st_init_params = inspect.signature(SentenceTransformer.__init__).parameters
+    SUPPORTS_LOCAL_FILES_ONLY = 'local_files_only' in _st_init_params
 except ImportError:
     SENTENCE_TRANSFORMERS_AVAILABLE = False
+    SUPPORTS_LOCAL_FILES_ONLY = False
 
 logger = logging.getLogger(__name__)
+
+# Local model cache directory
+LOCAL_MODEL_CACHE = Path(__file__).parent.parent / "models" / "embeddings"
+LOCAL_MODEL_CACHE.mkdir(parents=True, exist_ok=True)
 
 
 class LocalEmbedder:
@@ -31,7 +43,7 @@ class LocalEmbedder:
     MODEL_CONFIGS = {
         'nomic-embed-text-v1.5': {
             'name': 'nomic-ai/nomic-embed-text-v1.5',
-            'dimension': 768,
+            'dimension': 768, 
             'batch_size': 128,
             'trust_remote_code': True,
         },
@@ -63,10 +75,12 @@ class LocalEmbedder:
 
     def __init__(
         self,
-        model_name: str = 'nomic-embed-text-v1.5',
+        model_name: str = 'minilm',  # Changed default to reliable minilm
         device: Optional[str] = None,
         normalize_embeddings: bool = True,
-        batch_size: Optional[int] = None
+        batch_size: Optional[int] = None,
+        local_files_only: bool = False,  # Default to False to allow initial download
+        cache_folder: Optional[str] = None
     ):
         """
         Initialize local embedder with specified model.
@@ -76,6 +90,8 @@ class LocalEmbedder:
             device: 'cuda', 'cpu', or None for auto-detect
             normalize_embeddings: L2 normalize vectors for cosine similarity
             batch_size: Override default batch size
+            local_files_only: If True, only use locally cached models (offline mode)
+            cache_folder: Custom cache folder path (defaults to models/embeddings/)
         """
         if not SENTENCE_TRANSFORMERS_AVAILABLE:
             raise ImportError(
@@ -84,6 +100,13 @@ class LocalEmbedder:
         
         self.model_name = model_name
         self.normalize_embeddings = normalize_embeddings
+        self.local_files_only = local_files_only
+        
+        # Set cache folder
+        if cache_folder:
+            self.cache_folder = Path(cache_folder)
+        else:
+            self.cache_folder = LOCAL_MODEL_CACHE
         
         # Get model config
         self.config = self.MODEL_CONFIGS.get(model_name, {
@@ -98,20 +121,68 @@ class LocalEmbedder:
         
         # Load model
         logger.info(f"Loading embedding model: {self.config['name']}")
+        logger.info(f"Cache folder: {self.cache_folder}")
+        logger.info(f"Offline mode (local_files_only): {self.local_files_only}")
+        logger.info(f"sentence-transformers supports local_files_only: {SUPPORTS_LOCAL_FILES_ONLY}")
+        
         try:
+            # Build kwargs based on what's supported
+            model_kwargs = {
+                'device': device,
+                'trust_remote_code': self.config.get('trust_remote_code', False),
+                'cache_folder': str(self.cache_folder),
+            }
+            
+            # Only add local_files_only if supported by the library version
+            if SUPPORTS_LOCAL_FILES_ONLY:
+                model_kwargs['local_files_only'] = self.local_files_only
+            elif self.local_files_only:
+                logger.warning(
+                    f"sentence-transformers version {sentence_transformers.__version__} doesn't support local_files_only parameter. "
+                    f"Upgrade to 2.4.0+ for offline mode support: pip install --upgrade sentence-transformers"
+                )
+            
             self.model = SentenceTransformer(
                 self.config['name'],
-                device=device,
-                trust_remote_code=self.config.get('trust_remote_code', False)
+                **model_kwargs
             )
             logger.info(f"Model loaded successfully on device: {self.model.device}")
         except Exception as e:
             logger.error(f"Failed to load model {self.config['name']}: {e}")
+            
+            if self.local_files_only:
+                logger.warning(
+                    f"Model not found in cache. To download models for offline use, run:\n"
+                    f"  python -c \"from core.embedder import download_models; download_models()\"\n"
+                    f"Or set local_files_only=False to download on-demand (requires internet)."
+                )
+            
             # Fallback to MiniLM
             logger.info("Falling back to all-MiniLM-L6-v2")
             self.config = self.MODEL_CONFIGS['minilm']
             self.dimension = self.config['dimension']
-            self.model = SentenceTransformer(self.config['name'], device=device)
+            try:
+                # Build kwargs for fallback model
+                fallback_kwargs = {
+                    'device': device,
+                    'cache_folder': str(self.cache_folder),
+                }
+                
+                # Only add local_files_only if supported
+                if SUPPORTS_LOCAL_FILES_ONLY:
+                    fallback_kwargs['local_files_only'] = self.local_files_only
+                
+                self.model = SentenceTransformer(
+                    self.config['name'],
+                    **fallback_kwargs
+                )
+            except Exception as fallback_error:
+                logger.error(f"Fallback model also failed: {fallback_error}")
+                raise RuntimeError(
+                    f"Could not load any embedding model. "
+                    f"Please download models first using: "
+                    f"python -c \"from core.embedder import download_models; download_models()\""
+                )
 
     def embed_text(
         self,
@@ -273,8 +344,134 @@ def get_embedder(
     """
     global _global_embedder
     
+    # Load settings if available
+    try:
+        from utils.config import get_settings
+        settings = get_settings()
+        default_model = settings.embedding_model
+        # Check if local_files_only should be set from config
+        if not kwargs.get('local_files_only') and hasattr(settings, 'embedding_local_only'):
+            kwargs['local_files_only'] = settings.embedding_local_only
+    except:
+        default_model = 'minilm'  # Safe default
+        if 'local_files_only' not in kwargs:
+            kwargs['local_files_only'] = False  # Allow download if settings not available
+    
     if _global_embedder is None or (model_name and model_name != _global_embedder.model_name):
-        model_name = model_name or LocalEmbedder.get_recommended_model('balanced')
+        model_name = model_name or default_model
         _global_embedder = LocalEmbedder(model_name=model_name, **kwargs)
     
     return _global_embedder
+
+
+def download_models(
+    models: Optional[List[str]] = None,
+    cache_folder: Optional[str] = None
+) -> None:
+    """
+    Download embedding models for offline use.
+    
+    This function downloads models when you have internet connection,
+    so they can be used offline later.
+    
+    Args:
+        models: List of model identifiers to download (default: minilm for reliable offline operation)
+        cache_folder: Where to cache models (default: models/embeddings/)
+    
+    Example:
+        >>> from core.embedder import download_models
+        >>> download_models()  # Download minilm model (recommended)
+        >>> download_models(['minilm', 'nomic-embed-text-v1.5'])  # Download specific models
+    """
+    if not SENTENCE_TRANSFORMERS_AVAILABLE:
+        raise ImportError(
+            "sentence-transformers is required. Install with: pip install sentence-transformers"
+        )
+    
+    # Default to lightweight, reliable model for offline use
+    if models is None:
+        models = ['minilm']
+    
+    # Set cache folder
+    if cache_folder:
+        cache_path = Path(cache_folder)
+    else:
+        cache_path = LOCAL_MODEL_CACHE
+    
+    cache_path.mkdir(parents=True, exist_ok=True)
+    
+    print(f"Downloading models to: {cache_path}")
+    print(f"Models to download: {models}\n")
+    
+    for model_id in models:
+        config = LocalEmbedder.MODEL_CONFIGS.get(model_id, {'name': model_id})
+        model_name = config.get('name', model_id)
+        
+        print(f"Downloading: {model_name}...")
+        try:
+            # Build kwargs based on what's supported
+            download_kwargs = {
+                'cache_folder': str(cache_path),
+                'trust_remote_code': config.get('trust_remote_code', False)
+            }
+            
+            # Only add local_files_only if supported by the library version
+            if SUPPORTS_LOCAL_FILES_ONLY:
+                download_kwargs['local_files_only'] = False  # Allow internet download
+            
+            # Download by loading the model
+            model = SentenceTransformer(
+                model_name,
+                **download_kwargs
+            )
+            print(f"✓ Successfully downloaded: {model_name}")
+            print(f"  Dimension: {config.get('dimension', 'unknown')}")
+            print(f"  Max sequence length: {model.max_seq_length}\n")
+            del model  # Free memory
+        except Exception as e:
+            print(f"✗ Failed to download {model_name}: {e}\n")
+    
+    print(f"Download complete! Models are cached in: {cache_path}")
+    print(f"You can now use embeddings offline with local_files_only=True")
+
+
+def check_model_cache(
+    cache_folder: Optional[str] = None
+) -> dict:
+    """
+    Check which models are available in local cache.
+    
+    Args:
+        cache_folder: Cache folder to check (default: models/embeddings/)
+    
+    Returns:
+        Dictionary with model availability status
+    """
+    if cache_folder:
+        cache_path = Path(cache_folder)
+    else:
+        cache_path = LOCAL_MODEL_CACHE
+    
+    result = {
+        'cache_folder': str(cache_path),
+        'cache_exists': cache_path.exists(),
+        'models': {}
+    }
+    
+    if not cache_path.exists():
+        return result
+    
+    # Check each configured model
+    for model_id, config in LocalEmbedder.MODEL_CONFIGS.items():
+        model_name = config['name']
+        # Check if model folder exists in cache
+        model_folder = cache_path / model_name.replace('/', '_')
+        is_cached = model_folder.exists() and any(model_folder.iterdir())
+        
+        result['models'][model_id] = {
+            'name': model_name,
+            'cached': is_cached,
+            'path': str(model_folder) if is_cached else None
+        }
+    
+    return result

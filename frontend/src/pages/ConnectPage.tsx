@@ -127,7 +127,7 @@ export function ConnectPage() {
                   </ul>
                   <div className="mt-6 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
                     <p className="text-xs sm:text-sm text-blue-800 font-medium">
-                      💡 Make sure your phone is connected to the same WiFi network
+                      💡 Make sure your phone is connected to the same network
                     </p>
                   </div>
                 </div>
@@ -177,7 +177,7 @@ export function ConnectPage() {
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
                   <h4 className="font-semibold text-gray-900 mb-2 text-sm">Same Network</h4>
                   <p className="text-xs text-gray-700">
-                    Ensure both devices are on the same WiFi network for the connection to work
+                    Ensure both devices are on the same network for the connection to work
                   </p>
                 </div>
                 <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-100">

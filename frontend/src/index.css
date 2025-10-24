@@ -405,6 +405,54 @@
   pointer-events: none;
 }
 
+/* Chat container optimized scrolling */
+.chat-messages-container {
+  scroll-behavior: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Thinner scrollbar for chat on mobile */
+@media (max-width: 768px) {
+  .chat-messages-container::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  .chat-messages-container::-webkit-scrollbar-thumb {
+    background: rgba(20, 184, 166, 0.3);
+    border-radius: 10px;
+  }
+  
+  .chat-messages-container::-webkit-scrollbar-thumb:active {
+    background: rgba(20, 184, 166, 0.5);
+  }
+  
+  .chat-messages-container::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+/* Desktop scrollbar for chat */
+@media (min-width: 769px) {
+  .chat-messages-container::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .chat-messages-container::-webkit-scrollbar-thumb {
+    background: rgba(20, 184, 166, 0.4);
+    border-radius: 10px;
+  }
+  
+  .chat-messages-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(20, 184, 166, 0.6);
+  }
+  
+  .chat-messages-container::-webkit-scrollbar-track {
+    background: rgba(209, 213, 219, 0.1);
+    border-radius: 10px;
+  }
+}
+
 /* Mobile-specific optimizations */
 @media (max-width: 640px) {
   /* Improve tap targets for mobile */

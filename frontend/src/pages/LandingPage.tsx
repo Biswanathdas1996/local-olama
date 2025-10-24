@@ -120,13 +120,13 @@ export function LandingPage() {
               </h1>
               
               <p className="text-lg sm:text-xl text-gray-700 mb-8 max-w-2xl mx-auto lg:mx-0">
-                Enterprise-grade AI platform powered by Ollama. Run powerful language models completely offline 
+                Enterprise-grade AI platform. Run powerful language models completely offline 
                 with document intelligence, model training, and zero API costs.
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <Link
-                  to="/"
+                  to="/chat"
                   className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all hover:scale-105 flex items-center justify-center gap-2"
                 >
                   Get Started
@@ -428,7 +428,7 @@ export function LandingPage() {
 
             <div className="mt-12">
               <Link
-                to="/"
+                to="/chat"
                 className="inline-flex items-center gap-2 px-8 py-4 bg-white text-blue-600 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all hover:scale-105"
               >
                 Start Using Now
