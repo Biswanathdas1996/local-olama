@@ -106,9 +106,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-hidden flex flex-col">
           {/* Mobile menu button */}
-          <div className="lg:hidden sticky top-0 z-10 glass-card border-b border-blue-100/50 px-3 sm:px-4 py-2.5 sm:py-3 flex items-center tech-shadow">
+          <div className="lg:hidden sticky top-0 z-10 glass-card border-b border-blue-100/50 px-3 sm:px-4 py-2.5 sm:py-3 flex items-center tech-shadow flex-shrink-0">
             <button
               onClick={() => setSidebarOpen(true)}
               className="text-slate-600 hover:text-slate-900 p-1.5 hover:bg-blue-50 rounded-lg transition-all"
@@ -122,7 +122,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Page content */}
-          <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 max-w-7xl">
+          <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 max-w-7xl flex-1 min-h-0 overflow-auto">
             {children}
           </div>
         </main>
