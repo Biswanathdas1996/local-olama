@@ -200,6 +200,146 @@ export function ConnectPage() {
                 </div>
               </div>
             </div>
+
+            {/* API Documentation Card */}
+            <div className="glass-card rounded-2xl p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <span className="mr-2">📚</span>
+                API Documentation
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Use the Ollama server as an API to integrate with your applications
+              </p>
+
+              {/* API Endpoints */}
+              <div className="space-y-4">
+                {/* Text Generation */}
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200">
+                  <h4 className="font-semibold text-gray-900 mb-2 text-sm flex items-center">
+                    <span className="px-2 py-0.5 bg-green-600 text-white rounded text-xs mr-2">POST</span>
+                    Generate Text
+                  </h4>
+                  <p className="text-xs text-gray-600 mb-2">
+                    Endpoint: <code className="bg-white px-2 py-0.5 rounded text-green-700 font-mono">/generate</code>
+                  </p>
+                  <div className="bg-white rounded p-3 font-mono text-xs overflow-x-auto">
+                    <pre className="text-gray-800">
+{`curl -X POST "${serverUrl.replace('5000', '8000')}/generate" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "llama3.2:1b",
+    "prompt": "Explain quantum computing",
+    "temperature": 0.7
+  }'`}
+                    </pre>
+                  </div>
+                </div>
+
+                {/* List Models */}
+                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-4 border border-blue-200">
+                  <h4 className="font-semibold text-gray-900 mb-2 text-sm flex items-center">
+                    <span className="px-2 py-0.5 bg-blue-600 text-white rounded text-xs mr-2">GET</span>
+                    List Models
+                  </h4>
+                  <p className="text-xs text-gray-600 mb-2">
+                    Endpoint: <code className="bg-white px-2 py-0.5 rounded text-blue-700 font-mono">/models</code>
+                  </p>
+                  <div className="bg-white rounded p-3 font-mono text-xs overflow-x-auto">
+                    <pre className="text-gray-800">
+{`curl -X GET "${serverUrl.replace('5000', '8000')}/models"`}
+                    </pre>
+                  </div>
+                </div>
+
+                {/* RAG Search */}
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200">
+                  <h4 className="font-semibold text-gray-900 mb-2 text-sm flex items-center">
+                    <span className="px-2 py-0.5 bg-purple-600 text-white rounded text-xs mr-2">GET</span>
+                    RAG Search
+                  </h4>
+                  <p className="text-xs text-gray-600 mb-2">
+                    Endpoint: <code className="bg-white px-2 py-0.5 rounded text-purple-700 font-mono">/rag/search</code>
+                  </p>
+                  <div className="bg-white rounded p-3 font-mono text-xs overflow-x-auto">
+                    <pre className="text-gray-800">
+{`curl -X GET "${serverUrl.replace('5000', '8000')}/rag/search?query=your+search&index_name=your_index&top_k=5"`}
+                    </pre>
+                  </div>
+                </div>
+
+                {/* Document Ingestion */}
+                <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg p-4 border border-orange-200">
+                  <h4 className="font-semibold text-gray-900 mb-2 text-sm flex items-center">
+                    <span className="px-2 py-0.5 bg-orange-600 text-white rounded text-xs mr-2">POST</span>
+                    Ingest Document
+                  </h4>
+                  <p className="text-xs text-gray-600 mb-2">
+                    Endpoint: <code className="bg-white px-2 py-0.5 rounded text-orange-700 font-mono">/rag/ingest-doc</code>
+                  </p>
+                  <div className="bg-white rounded p-3 font-mono text-xs overflow-x-auto">
+                    <pre className="text-gray-800">
+{`curl -X POST "${serverUrl.replace('5000', '8000')}/rag/ingest-doc" \\
+  -F "file=@document.pdf" \\
+  -F "index_name=my_index"`}
+                    </pre>
+                  </div>
+                </div>
+
+                {/* Health Check */}
+                <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-lg p-4 border border-teal-200">
+                  <h4 className="font-semibold text-gray-900 mb-2 text-sm flex items-center">
+                    <span className="px-2 py-0.5 bg-teal-600 text-white rounded text-xs mr-2">GET</span>
+                    Health Check
+                  </h4>
+                  <p className="text-xs text-gray-600 mb-2">
+                    Endpoint: <code className="bg-white px-2 py-0.5 rounded text-teal-700 font-mono">/health</code>
+                  </p>
+                  <div className="bg-white rounded p-3 font-mono text-xs overflow-x-auto">
+                    <pre className="text-gray-800">
+{`curl -X GET "${serverUrl.replace('5000', '8000')}/health"`}
+                    </pre>
+                  </div>
+                </div>
+              </div>
+
+              {/* API Documentation Links */}
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <p className="text-sm text-gray-700 mb-2 font-medium">📖 Full API Documentation:</p>
+                <div className="flex flex-wrap gap-2">
+                  <a
+                    href={`${serverUrl.replace('5000', '8000')}/docs`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-sm text-xs font-medium"
+                  >
+                    Swagger UI
+                  </a>
+                  <a
+                    href={`${serverUrl.replace('5000', '8000')}/redoc`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all shadow-sm text-xs font-medium"
+                  >
+                    ReDoc
+                  </a>
+                  <a
+                    href={`${serverUrl.replace('5000', '8000')}/openapi.json`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 bg-gradient-to-r from-gray-600 to-slate-600 text-white rounded-lg hover:from-gray-700 hover:to-slate-700 transition-all shadow-sm text-xs font-medium"
+                  >
+                    OpenAPI JSON
+                  </a>
+                </div>
+              </div>
+
+              {/* Base URL Note */}
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-xs text-yellow-800 font-medium">
+                  ⚠️ Note: API server runs on port <strong>8000</strong>, while the UI runs on port <strong>5000</strong>
+                </p>
+              </div>
+            </div>
           </div>
         )}
       </div>

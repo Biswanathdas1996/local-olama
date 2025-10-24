@@ -181,7 +181,7 @@ export function ChatInterface() {
   };
 
   return (
-    <div className="flex h-[100dvh] lg:h-full overflow-hidden">
+    <div id="chat-interface-root" className="flex h-[100dvh] lg:h-full overflow-hidden">
       {/* Session Sidebar */}
       <SessionSidebar
         sessions={sessions}
@@ -195,10 +195,10 @@ export function ChatInterface() {
       />
 
       {/* Main Chat Area */}
-      <div className="flex-1 min-w-0 bg-gradient-to-b from-gray-100 to-gray-50 flex flex-col overflow-hidden h-full">
+      <div id="main-chat-area" className="flex-1 min-w-0 bg-gradient-to-b from-gray-100 to-gray-50 flex flex-col overflow-hidden h-full">
         {/* Modern Compact Header */}
-        <div className="px-2.5 sm:px-3 py-2 bg-gradient-to-r from-teal-600 to-teal-700 flex items-center justify-between shadow-md flex-shrink-0">
-          <div className="flex items-center space-x-1.5 sm:space-x-2 min-w-0 flex-1">
+        <div id="chat-header" className="px-2.5 sm:px-3 py-2 bg-gradient-to-r from-teal-600 to-teal-700 flex items-center justify-between shadow-md flex-shrink-0">
+          <div id="header-left-section" className="flex items-center space-x-1.5 sm:space-x-2 min-w-0 flex-1">
             {/* Menu Button for Mobile */}
             <button
               onClick={() => setShowSidebar(!showSidebar)}
@@ -207,10 +207,10 @@ export function ChatInterface() {
             >
               <FiMenu className="w-4 h-4" />
             </button>
-            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-white rounded-full flex items-center justify-center text-teal-600 font-bold text-xs sm:text-sm flex-shrink-0 shadow-sm">
+            <div id="ai-logo" className="w-7 h-7 sm:w-8 sm:h-8 bg-white rounded-full flex items-center justify-center text-teal-600 font-bold text-xs sm:text-sm flex-shrink-0 shadow-sm">
               AI
             </div>
-          <div className="min-w-0 flex-1">
+          <div id="model-selector-container" className="min-w-0 flex-1">
             <select
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
@@ -229,7 +229,7 @@ export function ChatInterface() {
             </select>
           </div>
         </div>
-        <div className="flex items-center space-x-0.5 sm:space-x-1 flex-shrink-0">
+        <div id="header-right-section" className="flex items-center space-x-0.5 sm:space-x-1 flex-shrink-0">
           <button
             onClick={() => setShowSettings(!showSettings)}
             className="p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 transition-all text-white"
@@ -258,13 +258,13 @@ export function ChatInterface() {
       >
         <div className="space-y-6">
           {/* Generation Parameters */}
-          <div>
+          <div id="generation-parameters-section">
             <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
               <span className="mr-2">🎛️</span>
               Generation Parameters
             </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+            <div id="generation-parameters-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div id="max-tokens-input" className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Max Tokens
                 </label>
@@ -279,7 +279,7 @@ export function ChatInterface() {
                 <p className="mt-1 text-xs text-gray-500">Maximum number of tokens to generate</p>
               </div>
               
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+              <div id="temperature-input" className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Temperature
                 </label>
@@ -295,7 +295,7 @@ export function ChatInterface() {
                 <p className="mt-1 text-xs text-gray-500">Controls randomness (0 = focused, 2 = creative)</p>
               </div>
               
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+              <div id="top-p-input" className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Top P
                 </label>
@@ -311,7 +311,7 @@ export function ChatInterface() {
                 <p className="mt-1 text-xs text-gray-500">Nucleus sampling threshold</p>
               </div>
               
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+              <div id="top-k-input" className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Top K
                 </label>
@@ -326,7 +326,7 @@ export function ChatInterface() {
                 <p className="mt-1 text-xs text-gray-500">Limits the next token selection</p>
               </div>
               
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+              <div id="repeat-penalty-input" className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Repeat Penalty
                 </label>
@@ -345,13 +345,13 @@ export function ChatInterface() {
           </div>
 
           {/* Output Format and Template */}
-          <div>
+          <div id="output-configuration-section">
             <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
               <span className="mr-2">📄</span>
               Output Configuration
             </h4>
-            <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <div id="output-configuration-grid" className="grid grid-cols-1 lg:grid-cols-1 gap-4">
+              <div id="output-format-type" className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
                   Output Format Type
                 </label>
@@ -372,7 +372,7 @@ export function ChatInterface() {
                 </p>
               </div>
               
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <div id="output-template" className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
                   Output Format
                 </label>
@@ -391,19 +391,19 @@ export function ChatInterface() {
           </div>
 
           {/* RAG Index Selection */}
-          <div>
+          <div id="rag-index-section">
             <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
               <span className="mr-2">📚</span>
               Search Indices (Optional)
             </h4>
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <div id="rag-index-container" className="bg-gray-50 rounded-lg p-4 border border-gray-200">
               {loadingIndices ? (
-                <div className="text-sm text-gray-500 flex items-center justify-center py-4">
+                <div id="indices-loading" className="text-sm text-gray-500 flex items-center justify-center py-4">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-2"></div>
                   Loading indices...
                 </div>
               ) : availableIndices.length === 0 ? (
-                <div className="text-sm text-gray-500 text-center py-4">
+                <div id="no-indices" className="text-sm text-gray-500 text-center py-4">
                   No indices available. Upload documents to create indices.
                 </div>
               ) : (
@@ -411,7 +411,7 @@ export function ChatInterface() {
                   <p className="text-sm text-gray-600 mb-3">
                     Select indices to search through your documents for relevant context
                   </p>
-                  <div className="flex flex-wrap gap-2">
+                  <div id="indices-list" className="flex flex-wrap gap-2">
                     {availableIndices.map((index) => (
                       <button
                         key={index.name}
@@ -427,7 +427,7 @@ export function ChatInterface() {
                     ))}
                   </div>
                   {selectedIndices.length > 0 && (
-                    <div className="mt-3 p-3 text-sm text-blue-700 font-medium bg-blue-100 border border-blue-200 rounded-lg">
+                    <div id="indices-selected-info" className="mt-3 p-3 text-sm text-blue-700 font-medium bg-blue-100 border border-blue-200 rounded-lg">
                       ✓ {selectedIndices.length} index{selectedIndices.length > 1 ? 'es' : ''} selected
                     </div>
                   )}
@@ -437,7 +437,7 @@ export function ChatInterface() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+          <div id="settings-action-buttons" className="flex justify-end gap-3 pt-4 border-t border-gray-200">
             <button
               onClick={() => {
                 setOptions({
@@ -467,6 +467,7 @@ export function ChatInterface() {
 
       {/* Modern Compact Chat Background - Scrollable */}
       <div 
+        id="messages-container"
         ref={messagesContainerRef}
         className="chat-messages-container flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-2 sm:px-3 py-2 sm:py-3 space-y-1 sm:space-y-1.5 relative"
         style={{
@@ -477,8 +478,8 @@ export function ChatInterface() {
         }}
       >
         {error && (
-          <div className="mx-auto max-w-md">
-            <div className="p-2 bg-red-50 border border-red-200 text-red-700 rounded-lg shadow-sm text-xs">
+          <div id="error-message-wrapper" className="mx-auto max-w-md">
+            <div id="error-message" className="p-2 bg-red-50 border border-red-200 text-red-700 rounded-lg shadow-sm text-xs">
               <p className="font-medium">Error</p>
               <p className="text-xs mt-0.5">{error}</p>
             </div>
@@ -486,9 +487,9 @@ export function ChatInterface() {
         )}
 
         {messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center py-6">
-              <div className="inline-block p-3 bg-white rounded-full shadow-md mb-2">
+          <div id="empty-messages-wrapper" className="flex items-center justify-center h-full">
+            <div id="empty-messages-content" className="text-center py-6">
+              <div id="empty-messages-icon" className="inline-block p-3 bg-white rounded-full shadow-md mb-2">
                 <FiSend className="w-6 h-6 text-teal-600" />
               </div>
               <p className="text-sm font-medium text-gray-700 mb-0.5">No messages yet</p>
@@ -509,7 +510,7 @@ export function ChatInterface() {
                 }`}
               >
                 {/* Message content */}
-                <div className={`text-xs sm:text-sm leading-relaxed ${message.role === 'user' ? 'prose-invert' : ''}`}>
+                <div id={`message-content-${message.id}`} className={`text-xs sm:text-sm leading-relaxed ${message.role === 'user' ? 'prose-invert' : ''}`}>
                   {message.role === 'user' ? (
                     <p className="whitespace-pre-wrap break-words m-0">{message.content}</p>
                   ) : (
@@ -547,7 +548,7 @@ export function ChatInterface() {
                 </div>
 
                 {/* Compact timestamp and status */}
-                <div className={`flex items-center justify-end gap-0.5 mt-0.5 text-[10px] ${
+                <div id={`message-meta-${message.id}`} className={`flex items-center justify-end gap-0.5 mt-0.5 text-[10px] ${
                   message.role === 'user' ? 'text-white/70' : 'text-gray-400'
                 }`}>
                   <span>{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
@@ -558,7 +559,7 @@ export function ChatInterface() {
 
                 {/* Subtle stats for assistant messages */}
                 {message.role === 'assistant' && message.stats && (
-                  <div className="text-[10px] text-gray-400 mt-0.5 italic">
+                  <div id={`message-stats-${message.id}`} className="text-[10px] text-gray-400 mt-0.5 italic">
                     {formatDuration(message.stats.total_duration)}
                   </div>
                 )}
@@ -569,9 +570,9 @@ export function ChatInterface() {
 
         {/* Compact typing indicator */}
         {loading && (
-          <div className="flex justify-start animate-slideDown">
-            <div className="bg-white rounded-lg rounded-tl-none px-2.5 py-2 shadow-sm border border-gray-200">
-              <div className="flex space-x-1">
+          <div id="typing-indicator-wrapper" className="flex justify-start animate-slideDown">
+            <div id="typing-indicator" className="bg-white rounded-lg rounded-tl-none px-2.5 py-2 shadow-sm border border-gray-200">
+              <div id="typing-dots" className="flex space-x-1">
                 <div className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
                 <div className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
                 <div className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
@@ -583,9 +584,9 @@ export function ChatInterface() {
       </div>
 
       {/* Compact Modern Input Area */}
-      <form onSubmit={handleSubmit} className="px-2 sm:px-3 py-1.5 sm:py-2 bg-gradient-to-r from-gray-50 to-white border-t border-gray-200 flex-shrink-0 safe-bottom shadow-md">
-        <div className="flex items-end space-x-1.5 max-w-5xl mx-auto">
-          <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 focus-within:border-teal-500 focus-within:shadow-md transition-all">
+      <form id="chat-input-form" onSubmit={handleSubmit} className="px-2 sm:px-3 py-1.5 sm:py-2 bg-gradient-to-r from-gray-50 to-white border-t border-gray-200 flex-shrink-0 safe-bottom shadow-md">
+        <div id="input-container" className="flex items-end space-x-1.5 max-w-5xl mx-auto">
+          <div id="textarea-wrapper" className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 focus-within:border-teal-500 focus-within:shadow-md transition-all">
             <textarea
               ref={inputRef}
               value={prompt}
