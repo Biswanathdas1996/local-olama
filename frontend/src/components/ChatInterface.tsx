@@ -195,26 +195,26 @@ export function ChatInterface() {
       />
 
       {/* Main Chat Area */}
-      <div className="flex-1 min-w-0 bg-gradient-to-b from-gray-100 to-gray-50 flex flex-col rounded-lg shadow-lg overflow-hidden h-full">
-        {/* WhatsApp-style Header - Fixed */}
-        <div className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gradient-to-r from-teal-600 to-teal-700 flex items-center justify-between shadow-md flex-shrink-0">
-          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+      <div className="flex-1 min-w-0 bg-gradient-to-b from-gray-100 to-gray-50 flex flex-col overflow-hidden h-full">
+        {/* Modern Compact Header */}
+        <div className="px-2.5 sm:px-3 py-2 bg-gradient-to-r from-teal-600 to-teal-700 flex items-center justify-between shadow-md flex-shrink-0">
+          <div className="flex items-center space-x-1.5 sm:space-x-2 min-w-0 flex-1">
             {/* Menu Button for Mobile */}
             <button
               onClick={() => setShowSidebar(!showSidebar)}
-              className="lg:hidden p-2 rounded-full hover:bg-white/10 active:bg-white/20 transition-all text-white"
+              className="lg:hidden p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 transition-all text-white"
               title="Toggle sessions"
             >
-              <FiMenu className="w-5 h-5" />
+              <FiMenu className="w-4 h-4" />
             </button>
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white rounded-full flex items-center justify-center text-teal-600 font-bold text-sm sm:text-base flex-shrink-0 shadow-sm">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-white rounded-full flex items-center justify-center text-teal-600 font-bold text-xs sm:text-sm flex-shrink-0 shadow-sm">
               AI
             </div>
           <div className="min-w-0 flex-1">
             <select
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
-              className="bg-white/20 text-white border-0 rounded-md px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium focus:outline-none focus:bg-white/30 transition-all w-full truncate"
+              className="bg-white/20 text-white border-0 rounded-md px-2 py-1 text-xs font-medium focus:outline-none focus:bg-white/30 transition-all w-full truncate cursor-pointer"
               disabled={loading}
             >
               {models.length === 0 ? (
@@ -229,22 +229,22 @@ export function ChatInterface() {
             </select>
           </div>
         </div>
-        <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+        <div className="flex items-center space-x-0.5 sm:space-x-1 flex-shrink-0">
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className="p-2 rounded-full hover:bg-white/10 active:bg-white/20 transition-all text-white"
+            className="p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 transition-all text-white"
             title="Settings"
             aria-label="Toggle settings"
           >
-            <FiSettings className="w-4 h-4 sm:w-5 sm:h-5" />
+            <FiSettings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
           <button
             onClick={clearMessages}
-            className="p-2 rounded-full hover:bg-white/10 active:bg-white/20 transition-all text-white"
+            className="p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 transition-all text-white"
             disabled={loading}
             title="Clear chat"
           >
-            <FiTrash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+            <FiTrash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
         </div>
       </div>
@@ -465,12 +465,12 @@ export function ChatInterface() {
         </div>
       </Modal>
 
-      {/* WhatsApp-style Chat Background - Scrollable */}
+      {/* Modern Compact Chat Background - Scrollable */}
       <div 
         ref={messagesContainerRef}
-        className="chat-messages-container flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-2 sm:px-4 py-3 sm:py-4 space-y-1.5 sm:space-y-2 relative"
+        className="chat-messages-container flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-2 sm:px-3 py-2 sm:py-3 space-y-1 sm:space-y-1.5 relative"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d1d5db' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d1d5db' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
           scrollbarWidth: 'thin',
           scrollbarColor: 'rgba(20, 184, 166, 0.4) transparent',
           WebkitOverflowScrolling: 'touch',
@@ -478,7 +478,7 @@ export function ChatInterface() {
       >
         {error && (
           <div className="mx-auto max-w-md">
-            <div className="p-2.5 sm:p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg shadow-sm text-xs sm:text-sm">
+            <div className="p-2 bg-red-50 border border-red-200 text-red-700 rounded-lg shadow-sm text-xs">
               <p className="font-medium">Error</p>
               <p className="text-xs mt-0.5">{error}</p>
             </div>
@@ -487,12 +487,12 @@ export function ChatInterface() {
 
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <div className="text-center py-8">
-              <div className="inline-block p-4 bg-white rounded-full shadow-md mb-3">
-                <FiSend className="w-8 h-8 text-teal-600" />
+            <div className="text-center py-6">
+              <div className="inline-block p-3 bg-white rounded-full shadow-md mb-2">
+                <FiSend className="w-6 h-6 text-teal-600" />
               </div>
-              <p className="text-base sm:text-lg font-medium text-gray-700 mb-1">No messages yet</p>
-              <p className="text-xs sm:text-sm text-gray-500">Start a conversation with your AI!</p>
+              <p className="text-sm font-medium text-gray-700 mb-0.5">No messages yet</p>
+              <p className="text-xs text-gray-500">Start a conversation with your AI!</p>
             </div>
           </div>
         ) : (
@@ -502,14 +502,14 @@ export function ChatInterface() {
               className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-slideDown`}
             >
               <div
-                className={`relative max-w-[85%] sm:max-w-[75%] md:max-w-2xl rounded-lg px-2.5 sm:px-3 py-1.5 sm:py-2 shadow-sm ${
+                className={`relative max-w-[88%] sm:max-w-[80%] md:max-w-2xl rounded-lg px-2 sm:px-2.5 py-1.5 sm:py-1.5 shadow-sm ${
                   message.role === 'user'
                     ? 'bg-gradient-to-br from-teal-500 to-teal-600 text-white rounded-tr-none'
                     : 'bg-white text-gray-800 rounded-tl-none border border-gray-200'
                 }`}
               >
                 {/* Message content */}
-                <div className={`text-sm sm:text-base leading-relaxed ${message.role === 'user' ? 'prose-invert' : ''}`}>
+                <div className={`text-xs sm:text-sm leading-relaxed ${message.role === 'user' ? 'prose-invert' : ''}`}>
                   {message.role === 'user' ? (
                     <p className="whitespace-pre-wrap break-words m-0">{message.content}</p>
                   ) : (
@@ -546,19 +546,19 @@ export function ChatInterface() {
                   )}
                 </div>
 
-                {/* WhatsApp-style timestamp and status */}
-                <div className={`flex items-center justify-end gap-1 mt-1 text-xs ${
-                  message.role === 'user' ? 'text-white/70' : 'text-gray-500'
+                {/* Compact timestamp and status */}
+                <div className={`flex items-center justify-end gap-0.5 mt-0.5 text-[10px] ${
+                  message.role === 'user' ? 'text-white/70' : 'text-gray-400'
                 }`}>
                   <span>{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   {message.role === 'user' && (
-                    <FiCheck className="w-3 h-3" />
+                    <FiCheck className="w-2.5 h-2.5" />
                   )}
                 </div>
 
                 {/* Subtle stats for assistant messages */}
                 {message.role === 'assistant' && message.stats && (
-                  <div className="text-xs text-gray-400 mt-1 italic">
+                  <div className="text-[10px] text-gray-400 mt-0.5 italic">
                     {formatDuration(message.stats.total_duration)}
                   </div>
                 )}
@@ -567,14 +567,14 @@ export function ChatInterface() {
           ))
         )}
 
-        {/* Typing indicator */}
+        {/* Compact typing indicator */}
         {loading && (
           <div className="flex justify-start animate-slideDown">
-            <div className="bg-white rounded-lg rounded-tl-none px-3 py-2.5 shadow-sm border border-gray-200">
+            <div className="bg-white rounded-lg rounded-tl-none px-2.5 py-2 shadow-sm border border-gray-200">
               <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                <div className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
               </div>
             </div>
           </div>
@@ -582,21 +582,21 @@ export function ChatInterface() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* WhatsApp-style Input Area - Fixed */}
-      <form onSubmit={handleSubmit} className="px-2 sm:px-3 py-2 sm:py-2.5 bg-gray-100 border-t border-gray-200 flex-shrink-0 safe-bottom shadow-lg">
-        <div className="flex items-end space-x-2 max-w-5xl mx-auto">
-          <div className="flex-1 bg-white rounded-3xl shadow-sm border border-gray-200 focus-within:border-teal-500 transition-all">
+      {/* Compact Modern Input Area */}
+      <form onSubmit={handleSubmit} className="px-2 sm:px-3 py-1.5 sm:py-2 bg-gradient-to-r from-gray-50 to-white border-t border-gray-200 flex-shrink-0 safe-bottom shadow-md">
+        <div className="flex items-end space-x-1.5 max-w-5xl mx-auto">
+          <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 focus-within:border-teal-500 focus-within:shadow-md transition-all">
             <textarea
               ref={inputRef}
               value={prompt}
               onChange={handleTextareaChange}
               onKeyDown={handleKeyDown}
               placeholder="Type a message..."
-              className="w-full px-4 py-2.5 sm:py-3 bg-transparent focus:outline-none resize-none text-base rounded-3xl"
+              className="w-full px-3 py-2 bg-transparent focus:outline-none resize-none text-sm rounded-2xl"
               rows={1}
               disabled={loading || !selectedModel}
               style={{
-                maxHeight: '120px',
+                maxHeight: '100px',
                 minHeight: '44px',
                 height: 'auto'
               }}
@@ -605,10 +605,10 @@ export function ChatInterface() {
           <button
             type="submit"
             disabled={loading || !prompt.trim() || !selectedModel}
-            className="w-11 h-11 sm:w-12 sm:h-12 bg-gradient-to-br from-teal-500 to-teal-600 text-white rounded-full hover:from-teal-600 hover:to-teal-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center shadow-md hover:shadow-lg flex-shrink-0"
+            className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-teal-500 to-teal-600 text-white rounded-full hover:from-teal-600 hover:to-teal-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center shadow-md hover:shadow-lg flex-shrink-0"
             aria-label="Send message"
           >
-            <FiSend className="w-5 h-5" />
+            <FiSend className="w-4 h-4" />
           </button>
         </div>
       </form>
