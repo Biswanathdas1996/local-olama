@@ -227,7 +227,7 @@ export function ConnectPage() {
 {`curl -X POST "${serverUrl.replace('5000', '8000')}/generate" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "model": "llama3.2:1b",
+    "model": "llama3.1:8b",
     "prompt": "Explain quantum computing",
     "temperature": 0.7
   }'`}

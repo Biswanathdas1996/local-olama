@@ -45,6 +45,7 @@ export function useGeneration() {
         content: response.response,
         timestamp: new Date(),
         model: response.model,
+        sources: response.sources,
         stats: {
           total_duration: response.total_duration,
           prompt_eval_count: response.prompt_eval_count,

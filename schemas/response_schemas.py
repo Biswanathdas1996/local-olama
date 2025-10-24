@@ -6,6 +6,31 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 
+class SourceCitation(BaseModel):
+    """Source citation information for generated response."""
+    
+    source_type: str = Field(
+        ...,
+        description="Type of source: 'document' for RAG, 'model' for AI generation"
+    )
+    source_name: Optional[str] = Field(
+        default=None,
+        description="Name of the document/index or model name"
+    )
+    page_number: Optional[int] = Field(
+        default=None,
+        description="Page number reference (for RAG sources)"
+    )
+    relevance_score: Optional[float] = Field(
+        default=None,
+        description="Relevance score (for RAG sources)"
+    )
+    excerpt: Optional[str] = Field(
+        default=None,
+        description="Brief excerpt from source (for RAG sources)"
+    )
+
+
 class GenerateResponse(BaseModel):
     """Response schema for text generation."""
     
@@ -16,6 +41,10 @@ class GenerateResponse(BaseModel):
     model: str = Field(
         ...,
         description="Model used for generation"
+    )
+    sources: Optional[List[SourceCitation]] = Field(
+        default=None,
+        description="List of source citations and references"
     )
     context: Optional[List[int]] = Field(
         default=None,
@@ -43,6 +72,14 @@ class GenerateResponse(BaseModel):
             "example": {
                 "response": "Quantum computing is a revolutionary computing paradigm...",
                 "model": "llama3",
+                "sources": [
+                    {
+                        "source_type": "document",
+                        "source_name": "quantum_physics_guide",
+                        "page_number": 42,
+                        "relevance_score": 0.95
+                    }
+                ],
                 "total_duration": 5000000000,
                 "prompt_eval_count": 25,
                 "eval_count": 150
