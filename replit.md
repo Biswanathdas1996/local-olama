@@ -86,13 +86,19 @@ Preferred communication style: Simple, everyday language.
   - Circular teal send button with active states
   - WhatsApp-style timestamps with check marks for user messages
   - Subtle dotted background pattern
-  - Auto-scroll to bottom on new messages
+  - Auto-scroll to bottom on new messages with requestAnimationFrame
   - Scroll detection with floating "scroll to bottom" button
   - Dynamic viewport height (100dvh) for mobile devices
-  - Touch-optimized scrolling with webkit-overflow-scrolling
+  - Touch-optimized scrolling with -webkit-overflow-scrolling: touch
   - Smooth keyboard handling (Enter to send, Shift+Enter for new line)
   - Safe-bottom padding for iOS notch devices
   - Typing indicator with bouncing dots
+  - **Enhanced Scroll Performance** (Latest):
+    - Fixed flexbox height constraints with min-h-0 for proper overflow containment
+    - Custom teal gradient scrollbar matching WhatsApp theme
+    - Overscroll behavior containment to prevent unwanted bounce
+    - Proper flex structure throughout Layout → ChatPage → ChatInterface
+    - Smooth scroll behavior with CSS scroll-behavior: smooth
 - **Modern Landing Page** (October 2025):
   - Hero section with generated AI server room imagery
   - Business problems solved section (4 key enterprise challenges)
