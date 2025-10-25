@@ -1,0 +1,12 @@
+{
+  "filename": "test_document.html",
+  "format": "html",
+  "extractor": "docling",
+  "extraction_timestamp": "20251025_115747",
+  "output_directory": "data\\docling_output\\test_document_20251025_115747",
+  "exports": {
+    "markdown": "data\\docling_output\\test_document_20251025_115747\\test_document.md",
+    "json": "data\\docling_output\\test_document_20251025_115747\\test_document.json",
+    "text": "data\\docling_output\\test_document_20251025_115747\\test_document.txt"
+  }
+}
