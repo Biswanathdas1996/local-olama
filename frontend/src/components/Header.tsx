@@ -18,7 +18,7 @@ export function Header() {
                 Local LLM Platform
               </h1>
               <p className="text-[9px] sm:text-[10px] md:text-xs text-gray-500 truncate hidden sm:block leading-tight mt-0.5">
-                Powered by Ollama - Fully Offline
+                Fully Offline and most secure LLM Hosting and Management
               </p>
             </div>
           </div>
