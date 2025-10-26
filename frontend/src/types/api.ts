@@ -11,6 +11,10 @@ export interface GenerateRequest {
   indices?: string[];
   output_format?: string;
   output_template?: string;
+  // Search configuration
+  search_top_k?: number;
+  search_min_score?: number;
+  search_type?: 'hybrid' | 'semantic' | 'lexical';
 }
 
 export interface ModelDownloadRequest {
@@ -98,6 +102,10 @@ export interface GenerationOptions {
   repeat_penalty: number;
   output_format?: string;
   output_template?: string;
+  // Search configuration
+  search_top_k?: number;
+  search_min_score?: number;
+  search_type?: 'hybrid' | 'semantic' | 'lexical';
 }
 
 // RAG / Document Management Types

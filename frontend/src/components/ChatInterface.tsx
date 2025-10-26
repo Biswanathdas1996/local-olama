@@ -56,6 +56,9 @@ export function ChatInterface() {
     repeat_penalty: 1.1,
     output_format: 'TEXT',
     output_template: '',
+    search_top_k: 5,
+    search_min_score: 0.0,
+    search_type: 'hybrid',
   });
 
   useEffect(() => {
@@ -119,12 +122,28 @@ export function ChatInterface() {
     setError(null);
 
     try {
-      const response = await apiService.generateText({
+      // Build request payload
+      const requestPayload: any = {
         model: selectedModel,
         prompt: userPrompt,
-        ...options,
-        indices: selectedIndices.length > 0 ? selectedIndices : undefined,
-      });
+        max_tokens: options.max_tokens,
+        temperature: options.temperature,
+        top_p: options.top_p,
+        top_k: options.top_k,
+        repeat_penalty: options.repeat_penalty,
+        output_format: options.output_format,
+        output_template: options.output_template,
+      };
+
+      // Add search parameters only if indices are selected
+      if (selectedIndices.length > 0) {
+        requestPayload.indices = selectedIndices;
+        requestPayload.search_top_k = options.search_top_k;
+        requestPayload.search_min_score = options.search_min_score;
+        requestPayload.search_type = options.search_type;
+      }
+
+      const response = await apiService.generateText(requestPayload);
 
       // Add assistant message
       const assistantMessage: ChatMessage = {
@@ -429,9 +448,70 @@ export function ChatInterface() {
                     ))}
                   </div>
                   {selectedIndices.length > 0 && (
-                    <div id="indices-selected-info" className="mt-3 p-3 text-sm text-blue-700 font-medium bg-blue-100 border border-blue-200 rounded-lg">
-                      ✓ {selectedIndices.length} index{selectedIndices.length > 1 ? 'es' : ''} selected
-                    </div>
+                    <>
+                      <div id="indices-selected-info" className="mt-3 p-3 text-sm text-blue-700 font-medium bg-blue-100 border border-blue-200 rounded-lg">
+                        ✓ {selectedIndices.length} index{selectedIndices.length > 1 ? 'es' : ''} selected
+                      </div>
+                      
+                      {/* Search Configuration - Only shown when indices are selected */}
+                      <div id="search-configuration" className="mt-4 pt-4 border-t border-gray-300">
+                        <h5 className="text-sm font-semibold text-gray-800 mb-3 flex items-center">
+                          <span className="mr-2">🔍</span>
+                          Search Configuration
+                        </h5>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          {/* Number of chunks to consider */}
+                          <div className="bg-white rounded-lg p-3 border border-gray-200">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Number of Chunks
+                            </label>
+                            <input
+                              type="number"
+                              value={options.search_top_k ?? 5}
+                              onChange={(e) => setOptions({ ...options, search_top_k: parseInt(e.target.value) })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              min="1"
+                              max="50"
+                            />
+                            <p className="mt-1 text-xs text-gray-500">Chunks to retrieve per index</p>
+                          </div>
+                          
+                          {/* Minimum match percentage */}
+                          <div className="bg-white rounded-lg p-3 border border-gray-200">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Min Match % ({((options.search_min_score ?? 0) * 100).toFixed(0)}%)
+                            </label>
+                            <input
+                              type="range"
+                              value={options.search_min_score ?? 0}
+                              onChange={(e) => setOptions({ ...options, search_min_score: parseFloat(e.target.value) })}
+                              className="w-full"
+                              min="0"
+                              max="1"
+                              step="0.05"
+                            />
+                            <p className="mt-1 text-xs text-gray-500">Minimum relevance threshold</p>
+                          </div>
+                          
+                          {/* Search Type */}
+                          <div className="bg-white rounded-lg p-3 border border-gray-200">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Search Type
+                            </label>
+                            <select
+                              value={options.search_type ?? 'hybrid'}
+                              onChange={(e) => setOptions({ ...options, search_type: e.target.value as 'hybrid' | 'semantic' | 'lexical' })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                            >
+                              <option value="hybrid">Hybrid (Best)</option>
+                              <option value="semantic">Semantic Only</option>
+                              <option value="lexical">Keyword Only</option>
+                            </select>
+                            <p className="mt-1 text-xs text-gray-500">Combines meaning & keywords</p>
+                          </div>
+                        </div>
+                      </div>
+                    </>
                   )}
                 </>
               )}
@@ -450,6 +530,9 @@ export function ChatInterface() {
                   repeat_penalty: 1.1,
                   output_format: 'TEXT',
                   output_template: '',
+                  search_top_k: 5,
+                  search_min_score: 0.0,
+                  search_type: 'hybrid',
                 });
                 setSelectedIndices([]);
               }}

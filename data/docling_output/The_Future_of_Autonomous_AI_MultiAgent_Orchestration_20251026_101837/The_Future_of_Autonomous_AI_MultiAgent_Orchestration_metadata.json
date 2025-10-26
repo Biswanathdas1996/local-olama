@@ -1,0 +1,13 @@
+{
+  "filename": "The_Future_of_Autonomous_AI_MultiAgent_Orchestration.pptx",
+  "format": "pptx",
+  "extractor": "docling",
+  "extraction_timestamp": "20251026_101837",
+  "output_directory": "data\\docling_output\\The_Future_of_Autonomous_AI_MultiAgent_Orchestration_20251026_101837",
+  "images_extracted": 0,
+  "exports": {
+    "markdown": "data\\docling_output\\The_Future_of_Autonomous_AI_MultiAgent_Orchestration_20251026_101837\\The_Future_of_Autonomous_AI_MultiAgent_Orchestration.md",
+    "json": "data\\docling_output\\The_Future_of_Autonomous_AI_MultiAgent_Orchestration_20251026_101837\\The_Future_of_Autonomous_AI_MultiAgent_Orchestration.json",
+    "text": "data\\docling_output\\The_Future_of_Autonomous_AI_MultiAgent_Orchestration_20251026_101837\\The_Future_of_Autonomous_AI_MultiAgent_Orchestration.txt"
+  }
+}

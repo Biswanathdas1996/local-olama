@@ -65,6 +65,36 @@ class GenerateRequest(BaseModel):
         default=None,
         description="Optional template to structure the output"
     )
+    # Search configuration parameters
+    search_top_k: Optional[int] = Field(
+        default=5,
+        description="Number of chunks to retrieve per index when using RAG",
+        ge=1,
+        le=50
+    )
+    search_min_score: Optional[float] = Field(
+        default=0.0,
+        description="Minimum relevance score threshold (0.0 to 1.0)",
+        ge=0.0,
+        le=1.0
+    )
+    search_type: Optional[str] = Field(
+        default="hybrid",
+        description="Search type: 'hybrid' (combines semantic and keyword), 'semantic' (meaning-based), or 'lexical' (keyword-based)"
+    )
+    
+    @field_validator('search_type')
+    @classmethod
+    def validate_search_type(cls, v: Optional[str]) -> Optional[str]:
+        """Validate search type is one of the allowed values."""
+        if v is not None:
+            allowed = ['hybrid', 'semantic', 'lexical']
+            if v.lower() not in allowed:
+                raise ValueError(
+                    f"Invalid search_type '{v}'. Must be one of: {', '.join(allowed)}"
+                )
+            return v.lower()
+        return v
     
     @field_validator('prompt')
     @classmethod

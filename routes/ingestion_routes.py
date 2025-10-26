@@ -15,11 +15,13 @@ from core import (
     KeywordExtractor,
     VectorStoreManager,
     HybridSearchEngine,
+    ImageProcessor,
 )
 from core.embedder import get_embedder
 from core.vector_store import get_vector_store
 from core.hybrid_search import get_hybrid_search
 from core.keyword_extractor import get_keyword_extractor
+from core.image_processor import get_image_processor
 from utils.config import get_settings
 from utils.logger import get_logger
 
@@ -41,6 +43,7 @@ _embedder = None
 _keyword_extractor = None
 _vector_store = None
 _hybrid_search = None
+_image_processor = None
 
 
 def get_doc_extractor() -> DocumentExtractor:
@@ -102,6 +105,18 @@ def get_hs() -> HybridSearchEngine:
     return _hybrid_search
 
 
+def get_img_processor() -> ImageProcessor:
+    """Get or create image processor"""
+    global _image_processor
+    if _image_processor is None:
+        _image_processor = get_image_processor(
+            use_gpu=False,  # Set to True if GPU available
+            lang='en',
+            enable_chart_parsing=True
+        )
+    return _image_processor
+
+
 # Response Models
 class IngestionResponse(BaseModel):
     """Response for document ingestion"""
@@ -110,6 +125,8 @@ class IngestionResponse(BaseModel):
     index_name: str
     chunks_created: int
     filename: str
+    images_processed: int = 0
+    image_chunks_created: int = 0
 
 
 class SearchResult(BaseModel):
@@ -153,10 +170,12 @@ async def ingest_document(
     
     Process:
     1. Extract text with structure preservation (Docling)
-    2. Chunk intelligently respecting boundaries
-    3. Generate embeddings (state-of-the-art local model)
-    4. Extract keywords for hybrid search
-    5. Store in vector + keyword indices
+    2. Extract images separately and save them
+    3. Chunk text intelligently respecting boundaries
+    4. Process images: OCR + chart parsing + description generation
+    5. Generate embeddings for both text and image descriptions
+    6. Extract keywords for hybrid search
+    7. Store in vector + keyword indices
     
     Supported formats: PDF, DOCX, TXT, PPTX, HTML
     """
@@ -170,7 +189,7 @@ async def ingest_document(
         # Read file content
         file_content = await file.read()
         
-        # Step 1: Extract document
+        # Step 1: Extract document (text AND images)
         extractor = get_doc_extractor()
         from io import BytesIO
         extracted_doc = extractor.extract(
@@ -178,71 +197,143 @@ async def ingest_document(
             filename=file.filename
         )
         
-        logger.info(f"Extracted {len(extracted_doc.sections)} sections from {file.filename}")
+        logger.info(f"Extracted {len(extracted_doc.sections)} sections and {len(extracted_doc.images)} images from {file.filename}")
         
         # Step 2: Chunk text
         chunker = get_text_chunker()
-        chunks = chunker.chunk_text(
+        text_chunks = chunker.chunk_text(
             text=extracted_doc.text,
             metadata=extracted_doc.metadata,
             sections=extracted_doc.sections
         )
         
-        logger.info(f"Created {len(chunks)} chunks")
+        logger.info(f"Created {len(text_chunks)} text chunks")
         
-        if not chunks:
+        if not text_chunks and not extracted_doc.images:
             raise HTTPException(status_code=400, detail="No content extracted from document")
         
-        # Step 3: Generate embeddings
+        # Step 3: Process images separately
+        image_chunks = []
+        images_processed = 0
+        if extracted_doc.images:
+            try:
+                img_processor = get_img_processor()
+                logger.info(f"Processing {len(extracted_doc.images)} images...")
+                
+                for image_meta in extracted_doc.images:
+                    try:
+                        # Process image with OCR and chart parsing
+                        image_content = img_processor.process_image(
+                            image_source=image_meta['image_path'],
+                            image_id=image_meta['image_id'],
+                            metadata={
+                                **image_meta,
+                                'source_document': file.filename,
+                            },
+                            save_output=True
+                        )
+                        
+                        # Chunk image description
+                        img_chunks = img_processor.chunk_image_description(
+                            image_content,
+                            chunk_size=500,
+                            overlap=50
+                        )
+                        
+                        image_chunks.extend(img_chunks)
+                        images_processed += 1
+                        logger.info(f"Processed image {image_meta['image_id']}: {len(img_chunks)} chunks")
+                        
+                    except Exception as img_err:
+                        logger.error(f"Failed to process image {image_meta.get('image_id')}: {img_err}")
+                        continue
+                
+                logger.info(f"Successfully processed {images_processed} images into {len(image_chunks)} chunks")
+                
+            except Exception as img_proc_err:
+                logger.error(f"Image processing failed: {img_proc_err}. Continuing with text only.")
+        
+        # Step 4: Generate embeddings for text chunks
+        all_chunks = text_chunks.copy()
         embedder = get_local_embedder()
-        chunk_texts = [chunk.text for chunk in chunks]
-        embeddings = embedder.embed_documents(chunk_texts, show_progress=False)
         
-        logger.info(f"Generated {len(embeddings)} embeddings")
+        chunk_texts = [chunk.text for chunk in text_chunks]
+        text_embeddings = embedder.embed_documents(chunk_texts, show_progress=False)
         
-        # Step 4: Extract keywords (if enabled)
+        logger.info(f"Generated {len(text_embeddings)} text embeddings")
+        
+        # Step 5: Generate embeddings for image chunks
+        image_embeddings = []
+        if image_chunks:
+            image_texts = [chunk['text'] for chunk in image_chunks]
+            image_embeddings = embedder.embed_documents(image_texts, show_progress=False)
+            logger.info(f"Generated {len(image_embeddings)} image description embeddings")
+        
+        # Combine all embeddings
+        all_embeddings = list(text_embeddings)
+        if image_embeddings is not None and len(image_embeddings) > 0:
+            all_embeddings.extend(image_embeddings)
+        
+        # Step 6: Extract keywords (if enabled)
         keyword_docs = []
         if settings.extract_keywords:
             try:
                 kw_extractor = get_kw_extractor()
                 if kw_extractor:
-                    logger.info("Extracting keywords from chunks...")
-                    for chunk in chunks:
+                    logger.info("Extracting keywords from text chunks...")
+                    # Process text chunks
+                    for chunk in text_chunks:
                         try:
                             keywords = kw_extractor.extract_keywords(
                                 chunk.text,
                                 top_n=settings.keywords_per_chunk
                             )
-                            if keywords:  # Only add if keywords were extracted
-                                keyword_docs.append({
-                                    'id': chunk.chunk_id,
-                                    'content': chunk.text,
-                                    'keywords': ' '.join(keywords),
-                                    'metadata': chunk.metadata
-                                })
+                            keyword_docs.append({
+                                'id': chunk.chunk_id,
+                                'content': chunk.text,
+                                'keywords': ' '.join(keywords) if keywords else '',
+                                'metadata': chunk.metadata
+                            })
                         except Exception as e:
                             logger.warning(f"Failed to extract keywords for chunk {chunk.chunk_id}: {e}")
-                            # Still add document without keywords for content search
                             keyword_docs.append({
                                 'id': chunk.chunk_id,
                                 'content': chunk.text,
                                 'keywords': '',
                                 'metadata': chunk.metadata
                             })
-                    logger.info(f"Extracted keywords for {len(keyword_docs)} chunks")
+                    
+                    # Process image chunks
+                    if image_chunks:
+                        logger.info("Extracting keywords from image description chunks...")
+                        for img_chunk in image_chunks:
+                            try:
+                                keywords = kw_extractor.extract_keywords(
+                                    img_chunk['text'],
+                                    top_n=settings.keywords_per_chunk
+                                )
+                                keyword_docs.append({
+                                    'id': img_chunk['chunk_id'],
+                                    'content': img_chunk['text'],
+                                    'keywords': ' '.join(keywords) if keywords else '',
+                                    'metadata': img_chunk['metadata']
+                                })
+                            except Exception as e:
+                                logger.warning(f"Failed to extract keywords for image chunk {img_chunk['chunk_id']}: {e}")
+                                keyword_docs.append({
+                                    'id': img_chunk['chunk_id'],
+                                    'content': img_chunk['text'],
+                                    'keywords': '',
+                                    'metadata': img_chunk['metadata']
+                                })
+                    
+                    logger.info(f"Extracted keywords for {len(keyword_docs)} total chunks")
                 else:
                     logger.warning("Keyword extractor not available. Skipping keyword extraction.")
             except Exception as e:
                 logger.error(f"Keyword extraction failed: {e}. Continuing without keywords.")
-                # Create keyword docs with just content for basic lexical search
-                keyword_docs = [{
-                    'id': chunk.chunk_id,
-                    'content': chunk.text,
-                    'keywords': '',
-                    'metadata': chunk.metadata
-                } for chunk in chunks]
         
-        # Step 5: Store in vector store
+        # Step 7: Store in vector store
         vs = get_vs()
         
         # Create collection if doesn't exist
@@ -253,33 +344,47 @@ async def ingest_document(
                 embedding_dimension=embedder.dimension
             )
         
-        # Add documents with cleaned metadata (remove None values)
-        cleaned_metadatas = [clean_metadata(chunk.metadata) for chunk in chunks]
+        # Prepare all texts and metadata for storage
+        all_texts = chunk_texts.copy()
+        all_metadatas = [clean_metadata(chunk.metadata) for chunk in text_chunks]
+        all_ids = [chunk.chunk_id for chunk in text_chunks]
         
+        # Add image chunks
+        if image_chunks:
+            all_texts.extend([chunk['text'] for chunk in image_chunks])
+            all_metadatas.extend([clean_metadata(chunk['metadata']) for chunk in image_chunks])
+            all_ids.extend([chunk['chunk_id'] for chunk in image_chunks])
+        
+        # Add documents with cleaned metadata
         success = vs.add_documents(
             collection_name=index_name,
-            texts=chunk_texts,
-            embeddings=embeddings,
-            metadatas=cleaned_metadatas,
-            ids=[chunk.chunk_id for chunk in chunks]
+            texts=all_texts,
+            embeddings=all_embeddings,
+            metadatas=all_metadatas,
+            ids=all_ids
         )
         
         if not success:
             raise HTTPException(status_code=500, detail="Failed to store in vector database")
         
-        # Step 6: Store in keyword index (if keywords extracted)
+        # Step 8: Store in keyword index (if keywords extracted)
         if keyword_docs:
             hs = get_hs()
             hs.add_to_keyword_index(index_name, keyword_docs)
         
         logger.info(f"Successfully ingested {file.filename} into {index_name}")
+        logger.info(f"  - Text chunks: {len(text_chunks)}")
+        logger.info(f"  - Image chunks: {len(image_chunks)}")
+        logger.info(f"  - Total chunks: {len(all_texts)}")
         
         return IngestionResponse(
             success=True,
             message=f"Document ingested successfully",
             index_name=index_name,
-            chunks_created=len(chunks),
-            filename=file.filename
+            chunks_created=len(text_chunks),
+            filename=file.filename,
+            images_processed=images_processed,
+            image_chunks_created=len(image_chunks)
         )
         
     except HTTPException:

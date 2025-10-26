@@ -11,9 +11,11 @@ This guide explains how to set up and use embedding models **without internet co
 
 ## Step 1: Download Models (Requires Internet - One Time Only)
 
-When you have internet connection, download the embedding models to cache them locally:
+When you have internet connection, download the embedding models and PaddleOCR models to cache them locally:
 
-### Option A: Download All Recommended Models
+### A. Download Embedding Models
+
+#### Option A: Download All Recommended Models
 ```powershell
 python scripts/download_embedding_models.py
 ```
@@ -23,7 +25,7 @@ This downloads:
 - `nomic-embed-text-v1.5` - Best balance (768d) 
 - `bge-base` - Good accuracy (768d)
 
-### Option B: Download Specific Models
+#### Option B: Download Specific Models
 ```powershell
 # Download only lightweight model
 python scripts/download_embedding_models.py --models minilm
@@ -32,15 +34,34 @@ python scripts/download_embedding_models.py --models minilm
 python scripts/download_embedding_models.py --models minilm nomic-embed-text-v1.5
 ```
 
-### Option C: List Available Models
+#### Option C: List Available Models
 ```powershell
 python scripts/download_embedding_models.py --list-available
 ```
 
-### Option D: Check What's Already Cached
+#### Option D: Check What's Already Cached
 ```powershell
 python scripts/download_embedding_models.py --check-only
 ```
+
+### B. Download PaddleOCR Models (For Image Processing)
+
+Download PaddleOCR models for text extraction from images:
+
+```powershell
+# Download English models (default)
+python scripts/download_paddleocr_models.py
+
+# Download multiple languages
+python scripts/download_paddleocr_models.py --lang en ch
+
+# Check if models are cached
+python scripts/download_paddleocr_models.py --check-only
+```
+
+**Note**: PaddleOCR models are ~500MB and required for processing images in PDFs/documents.
+
+See [PADDLEOCR_SETUP.md](PADDLEOCR_SETUP.md) for detailed PaddleOCR configuration.
 
 ## Step 2: Use Offline Mode
 
@@ -75,7 +96,7 @@ embedder = LocalEmbedder(
 
 ## Troubleshooting
 
-### Error: Model not found in cache
+### Error: Model not found in cache (Embedding Models)
 
 If you get this error:
 ```
@@ -86,6 +107,23 @@ Model not found in cache
 **Solution**: Download the models first:
 ```powershell
 python scripts/download_embedding_models.py
+```
+
+### Error: PaddleOCR models downloading in offline mode
+
+If you see errors about downloading PaddleOCR models when offline:
+```
+Cannot find an appropriate cached snapshot folder for the specified revision
+```
+
+**Solution**: Download PaddleOCR models first:
+```powershell
+python scripts/download_paddleocr_models.py
+```
+
+**Verify cache**:
+```powershell
+python scripts/download_paddleocr_models.py --check-only
 ```
 
 ### Error: No module named 'einops'
@@ -100,13 +138,20 @@ Or reinstall all dependencies:
 pip install -r requirements.txt
 ```
 
-### Check Cache Location
+### Check Cache Locations
 
-Models are cached in: `models/embeddings/`
+**Embedding models** are cached in: `models/embeddings/`
 
 To check what's cached:
 ```powershell
 python scripts/download_embedding_models.py --check-only
+```
+
+**PaddleOCR models** are cached in: `~/.paddlex/official_models/` (Windows: `C:\Users\<USERNAME>\.paddlex\`)
+
+To check what's cached:
+```powershell
+python scripts/download_paddleocr_models.py --check-only
 ```
 
 ### Custom Cache Location

@@ -52,6 +52,12 @@ keybert==0.8.4
 spacy==3.7.2
 nltk==3.8.1
 
+# Image Processing & OCR
+paddleocr>=2.7.0
+paddlepaddle>=2.5.0  # CPU version, use paddlepaddle-gpu for GPU
+opencv-python>=4.8.0
+shapely>=2.0.0
+
 # Search
 whoosh==2.7.4
 

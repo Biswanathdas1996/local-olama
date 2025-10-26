@@ -491,6 +491,7 @@ class HybridSearchEngine:
         query_text: str,
         query_embedding: Optional[np.ndarray] = None,
         top_k: int = 10,
+        min_score: float = 0.0,
         search_type: str = 'hybrid'
     ) -> List[Dict]:
         """
@@ -501,6 +502,7 @@ class HybridSearchEngine:
             query_text: Natural language query
             query_embedding: Pre-computed query embedding (optional)
             top_k: Number of results
+            min_score: Minimum score threshold
             search_type: 'hybrid', 'semantic', or 'lexical'
             
         Returns:
@@ -518,7 +520,7 @@ class HybridSearchEngine:
             if query_embedding is None:
                 raise ValueError("query_embedding required for hybrid search")
             return self.hybrid_search(
-                collection_name, query_text, query_embedding, top_k
+                collection_name, query_text, query_embedding, top_k, min_score
             )
         
         else:

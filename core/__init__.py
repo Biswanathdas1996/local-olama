@@ -7,6 +7,7 @@ from .embedder import LocalEmbedder
 from .keyword_extractor import KeywordExtractor
 from .vector_store import VectorStoreManager
 from .hybrid_search import HybridSearchEngine
+from .image_processor import ImageProcessor
 
 __all__ = [
     "DocumentExtractor",
@@ -15,4 +16,5 @@ __all__ = [
     "KeywordExtractor",
     "VectorStoreManager",
     "HybridSearchEngine",
+    "ImageProcessor",
 ]
