@@ -59,6 +59,8 @@ export function ChatInterface() {
     search_top_k: 5,
     search_min_score: 0.0,
     search_type: 'hybrid',
+    enable_keyword_extraction: true,
+    keyword_top_n: 10,
   });
 
   useEffect(() => {
@@ -141,6 +143,8 @@ export function ChatInterface() {
         requestPayload.search_top_k = options.search_top_k;
         requestPayload.search_min_score = options.search_min_score;
         requestPayload.search_type = options.search_type;
+        requestPayload.enable_keyword_extraction = options.enable_keyword_extraction;
+        requestPayload.keyword_top_n = options.keyword_top_n;
       }
 
       const response = await apiService.generateText(requestPayload);
@@ -459,7 +463,7 @@ export function ChatInterface() {
                           <span className="mr-2">🔍</span>
                           Search Configuration
                         </h5>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                           {/* Number of chunks to consider */}
                           <div className="bg-white rounded-lg p-3 border border-gray-200">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -509,7 +513,53 @@ export function ChatInterface() {
                             </select>
                             <p className="mt-1 text-xs text-gray-500">Combines meaning & keywords</p>
                           </div>
+                          
+                          {/* Keyword Extraction Toggle */}
+                          <div className="bg-white rounded-lg p-3 border border-gray-200">
+                            <label className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium text-gray-700">
+                                Smart Keywords
+                              </span>
+                              <input
+                                type="checkbox"
+                                checked={options.enable_keyword_extraction ?? true}
+                                onChange={(e) => setOptions({ ...options, enable_keyword_extraction: e.target.checked })}
+                                className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                              />
+                            </label>
+                            <p className="mt-1 text-xs text-gray-500">
+                              Auto-extract key terms from your query
+                            </p>
+                          </div>
+                          
+                          {/* Keyword Count (only show if extraction is enabled) */}
+                          {options.enable_keyword_extraction && (
+                            <div className="bg-white rounded-lg p-3 border border-gray-200">
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Keywords to Extract
+                              </label>
+                              <input
+                                type="number"
+                                value={options.keyword_top_n ?? 10}
+                                onChange={(e) => setOptions({ ...options, keyword_top_n: parseInt(e.target.value) })}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                min="1"
+                                max="20"
+                              />
+                              <p className="mt-1 text-xs text-gray-500">Number of key terms to find</p>
+                            </div>
+                          )}
                         </div>
+                        
+                        {/* Info banner for keyword extraction */}
+                        {options.enable_keyword_extraction && (
+                          <div className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+                            <p className="text-xs text-blue-800 font-medium flex items-center">
+                              <span className="mr-2">💡</span>
+                              Smart Keywords enabled: AI will automatically identify key concepts from your question for better search results
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </>
                   )}
@@ -533,6 +583,8 @@ export function ChatInterface() {
                   search_top_k: 5,
                   search_min_score: 0.0,
                   search_type: 'hybrid',
+                  enable_keyword_extraction: true,
+                  keyword_top_n: 10,
                 });
                 setSelectedIndices([]);
               }}

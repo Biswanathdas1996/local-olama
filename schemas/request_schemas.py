@@ -82,6 +82,16 @@ class GenerateRequest(BaseModel):
         default="hybrid",
         description="Search type: 'hybrid' (combines semantic and keyword), 'semantic' (meaning-based), or 'lexical' (keyword-based)"
     )
+    enable_keyword_extraction: Optional[bool] = Field(
+        default=True,
+        description="Whether to extract keywords from the query for enhanced lexical/hybrid search"
+    )
+    keyword_top_n: Optional[int] = Field(
+        default=10,
+        description="Number of keywords to extract from query (1-20)",
+        ge=1,
+        le=20
+    )
     
     @field_validator('search_type')
     @classmethod

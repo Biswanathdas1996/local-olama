@@ -15,6 +15,8 @@ export interface GenerateRequest {
   search_top_k?: number;
   search_min_score?: number;
   search_type?: 'hybrid' | 'semantic' | 'lexical';
+  enable_keyword_extraction?: boolean;
+  keyword_top_n?: number;
 }
 
 export interface ModelDownloadRequest {
@@ -106,6 +108,8 @@ export interface GenerationOptions {
   search_top_k?: number;
   search_min_score?: number;
   search_type?: 'hybrid' | 'semantic' | 'lexical';
+  enable_keyword_extraction?: boolean;
+  keyword_top_n?: number;
 }
 
 // RAG / Document Management Types

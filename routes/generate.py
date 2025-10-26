@@ -20,6 +20,7 @@ try:
     from core.embedder import get_embedder
     from core.hybrid_search import get_hybrid_search
     from core.vector_store import get_vector_store
+    from core.keyword_extractor import get_keyword_extractor
     from utils.config import get_settings
     RAG_AVAILABLE = True
 except ImportError:
@@ -34,7 +35,9 @@ async def fetch_relevant_context(
     indices: List[str],
     top_k: int = 5,
     min_score: float = 0.0,
-    search_type: str = 'hybrid'
+    search_type: str = 'hybrid',
+    enable_keyword_extraction: bool = True,
+    keyword_top_n: int = 10
 ) -> tuple[str, List[SourceCitation]]:
     """
     Fetch relevant context from specified indices using RAG.
@@ -45,6 +48,8 @@ async def fetch_relevant_context(
         top_k: Number of top results to retrieve per index
         min_score: Minimum relevance score threshold (0.0 to 1.0)
         search_type: Type of search - 'hybrid', 'semantic', or 'lexical'
+        enable_keyword_extraction: Whether to extract keywords from query for enhanced search
+        keyword_top_n: Number of keywords to extract from the query
         
     Returns:
         Tuple of (formatted context string, list of source citations)
@@ -59,8 +64,31 @@ async def fetch_relevant_context(
         vector_store = get_vector_store(persist_directory=settings.vector_store_path)
         hybrid_search = get_hybrid_search(vector_store)
         
+        # Extract keywords from the query if enabled
+        extracted_keywords = []
+        enhanced_query = query
+        if enable_keyword_extraction:
+            try:
+                keyword_extractor = get_keyword_extractor()
+                extracted_keywords = keyword_extractor.extract_keywords(
+                    query,
+                    top_n=keyword_top_n,
+                    use_mmr=True,
+                    diversity=0.7
+                )
+                
+                if extracted_keywords:
+                    logger.info(f"Extracted keywords from query: {extracted_keywords}")
+                    # Enhance the query with extracted keywords for better lexical matching
+                    # This helps especially when search_type is 'hybrid' or 'lexical'
+                    keywords_str = " ".join(extracted_keywords)
+                    enhanced_query = f"{query} {keywords_str}"
+                    logger.info(f"Enhanced query for search: {enhanced_query[:100]}...")
+            except Exception as e:
+                logger.warning(f"Keyword extraction failed, using original query: {e}")
+        
         # Generate query embedding
-        query_embedding = embedder.embed_query(query)
+        query_embedding = embedder.embed_query(query)  # Use original query for semantic embedding
         
         # Search all specified indices
         all_results = []
@@ -74,7 +102,7 @@ async def fetch_relevant_context(
             try:
                 results = hybrid_search.search(
                     collection_name=index_name,
-                    query_text=query,
+                    query_text=enhanced_query,  # Use enhanced query for lexical search
                     query_embedding=query_embedding,
                     top_k=top_k,
                     min_score=min_score,
@@ -133,6 +161,11 @@ async def fetch_relevant_context(
         
         # Format context
         context_parts = ["Here is relevant context from your documents:\n"]
+        
+        # Add extracted keywords info if available
+        if extracted_keywords:
+            context_parts.append(f"\n[Key concepts identified: {', '.join(extracted_keywords[:5])}]\n")
+        
         for i, result in enumerate(top_results, 1):
             source = result.get('source', 'unknown')
             text = result.get('text', '').strip()
@@ -204,6 +237,7 @@ async def generate_text(request: GenerateRequest) -> GenerateResponse:
         if request.indices and len(request.indices) > 0:
             logger.info(f"RAG enabled with indices: {request.indices}")
             logger.info(f"Search config - top_k: {request.search_top_k}, min_score: {request.search_min_score}, type: {request.search_type}")
+            logger.info(f"Keyword extraction: {request.enable_keyword_extraction}")
             
             # Fetch relevant context from indices
             relevant_context, rag_sources = await fetch_relevant_context(
@@ -211,7 +245,9 @@ async def generate_text(request: GenerateRequest) -> GenerateResponse:
                 indices=request.indices,
                 top_k=request.search_top_k or 5,
                 min_score=request.search_min_score or 0.0,
-                search_type=request.search_type or 'hybrid'
+                search_type=request.search_type or 'hybrid',
+                enable_keyword_extraction=request.enable_keyword_extraction if hasattr(request, 'enable_keyword_extraction') else True,
+                keyword_top_n=request.keyword_top_n if hasattr(request, 'keyword_top_n') else 10
             )
             
             if relevant_context:
