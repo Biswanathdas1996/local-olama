@@ -212,3 +212,9 @@ temp/
 
 # Ollama models (if stored locally)
 .ollama/
+
+# Testing and Development Files
+test_analytics_*.py
+monitor_analytics_*.py
+analytics_performance.log
+ANALYTICS_PERFORMANCE_REPORT.md

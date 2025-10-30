@@ -384,7 +384,7 @@ async def generate_text(request: GenerateRequest) -> GenerateResponse:
                 filtering_reason = output_result.get("reason")
         
         # Build response
-        return GenerateResponse(
+        response = GenerateResponse(
             response=final_response,
             model=result.get("model", request.model),
             sources=sources if sources else None,
@@ -398,6 +398,23 @@ async def generate_text(request: GenerateRequest) -> GenerateResponse:
             output_filtered=output_filtered,
             filtering_reason=filtering_reason
         )
+        
+        # Add analytics headers for middleware tracking
+        from fastapi import Response
+        from fastapi.responses import JSONResponse
+        import json
+        
+        response_json = JSONResponse(content=response.dict())
+        response_json.headers["X-Model-Name"] = request.model
+        response_json.headers["X-Tokens-Generated"] = str(result.get("eval_count", 0))
+        response_json.headers["X-Response-Length"] = str(len(final_response))
+        response_json.headers["X-RAG-Enabled"] = str(bool(request.indices)).lower()
+        if request.indices:
+            response_json.headers["X-Indices-Used"] = json.dumps(request.indices)
+        if request.search_type:
+            response_json.headers["X-Search-Type"] = request.search_type
+        
+        return response_json
         
     except ModelNotFoundError as e:
         logger.error("generation_model_not_found", model=request.model, error=str(e))

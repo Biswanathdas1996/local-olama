@@ -27,6 +27,7 @@ logger = get_logger(__name__)
 
 from routes import models_router, generate_router
 from routes.ingestion_routes import router as ingestion_router
+from routes.analytics import router as analytics_router
 
 # Make training optional (requires additional dependencies)
 try:
@@ -39,6 +40,7 @@ except ImportError as e:
     training_router = None
 
 from services import get_ollama_service, cleanup_ollama_service
+from services.analytics_service import get_analytics_service, cleanup_analytics_service
 from schemas import HealthResponse, ErrorResponse
 
 
@@ -78,6 +80,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     # Shutdown
     logger.info("application_shutdown")
     await cleanup_ollama_service()
+    await cleanup_analytics_service()
 
 
 # Initialize FastAPI app
@@ -151,6 +154,98 @@ async def log_requests(request: Request, call_next):
         status_code=response.status_code,
         duration_seconds=duration
     )
+    
+    return response
+
+
+# Analytics middleware for tracking usage
+@app.middleware("http")
+async def analytics_middleware(request: Request, call_next):
+    """Track analytics data for all requests."""
+    import uuid
+    import json
+    
+    start_time = datetime.utcnow()
+    session_id = str(uuid.uuid4())
+    
+    # Get or create session ID from headers
+    session_id = request.headers.get("X-Session-ID", session_id)
+    user_id = request.headers.get("X-User-ID")
+    
+    # Read request body for analytics (if needed)
+    request_data = {}
+    model_name = None
+    prompt_length = 0
+    rag_enabled = False
+    indices_used = None
+    search_type = None
+    
+    try:
+        # For POST requests, try to extract relevant info
+        if request.method == "POST" and request.url.path in ["/generate", "/rag/search"]:
+            # Note: We can't read the body here as it's already consumed
+            # This will be handled in the route handlers
+            pass
+    except Exception as e:
+        logger.debug(f"Could not extract request data for analytics: {e}")
+    
+    # Process the request
+    response = await call_next(request)
+    
+    # Calculate metrics
+    end_time = datetime.utcnow()
+    response_time = (end_time - start_time).total_seconds()
+    
+    # Skip analytics for static files and health checks
+    skip_paths = ["/docs", "/redoc", "/openapi.json", "/favicon.ico", "/health"]
+    should_track = not any(request.url.path.startswith(path) for path in skip_paths)
+    
+    if should_track:
+        try:
+            analytics_service = get_analytics_service()
+            
+            # Extract response length if possible
+            response_length = 0
+            tokens_generated = 0
+            
+            # Try to get response data from headers (if set by handlers)
+            if hasattr(response, 'headers'):
+                tokens_generated = int(response.headers.get("X-Tokens-Generated", 0))
+                response_length = int(response.headers.get("X-Response-Length", 0))
+                model_name = response.headers.get("X-Model-Name")
+                rag_enabled = response.headers.get("X-RAG-Enabled", "false").lower() == "true"
+                indices_str = response.headers.get("X-Indices-Used")
+                if indices_str:
+                    try:
+                        indices_used = json.loads(indices_str)
+                    except:
+                        pass
+                search_type = response.headers.get("X-Search-Type")
+            
+            # Log the request asynchronously
+            await analytics_service.log_request_async(
+                endpoint=request.url.path,
+                method=request.method,
+                model_name=model_name,
+                prompt_length=prompt_length,
+                response_length=response_length,
+                response_time=response_time,
+                tokens_generated=tokens_generated,
+                status_code=response.status_code,
+                user_id=user_id,
+                session_id=session_id,
+                rag_enabled=rag_enabled,
+                indices_used=indices_used,
+                search_type=search_type,
+                error_message=None if response.status_code < 400 else "Request failed"
+            )
+            
+        except Exception as e:
+            # Don't let analytics failures affect the main request
+            logger.debug(f"Analytics tracking failed: {e}")
+    
+    # Add session ID to response headers for client tracking
+    response.headers["X-Session-ID"] = session_id
     
     return response
 
@@ -289,6 +384,7 @@ async def root():
 app.include_router(models_router)
 app.include_router(generate_router)
 app.include_router(ingestion_router)
+app.include_router(analytics_router)
 
 # Only include training router if available
 if TRAINING_AVAILABLE and training_router:
@@ -296,6 +392,8 @@ if TRAINING_AVAILABLE and training_router:
     logger.info("Training routes registered")
 else:
     logger.warning("Training routes not available - install dependencies to enable")
+
+logger.info("Analytics routes registered")
 
 
 if __name__ == "__main__":
