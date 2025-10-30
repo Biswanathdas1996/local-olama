@@ -66,6 +66,23 @@ class GenerateResponse(BaseModel):
         default=None,
         description="Number of tokens generated"
     )
+    # Guardrails information
+    guardrails_applied: Optional[bool] = Field(
+        default=None,
+        description="Whether guardrails were applied to this response"
+    )
+    input_filtered: Optional[bool] = Field(
+        default=None,
+        description="Whether the input was filtered by guardrails"
+    )
+    output_filtered: Optional[bool] = Field(
+        default=None,
+        description="Whether the output was filtered by guardrails"
+    )
+    filtering_reason: Optional[str] = Field(
+        default=None,
+        description="Reason for filtering (if any)"
+    )
     
     class Config:
         json_schema_extra = {

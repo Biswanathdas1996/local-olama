@@ -92,6 +92,15 @@ class GenerateRequest(BaseModel):
         ge=1,
         le=20
     )
+    # Guardrails configuration
+    enable_guardrails: Optional[bool] = Field(
+        default=True,
+        description="Whether to enable NeMo Guardrails for content filtering and safety"
+    )
+    guardrails_strict: Optional[bool] = Field(
+        default=False,
+        description="Whether to use strict mode for guardrails (more conservative filtering)"
+    )
     
     @field_validator('search_type')
     @classmethod

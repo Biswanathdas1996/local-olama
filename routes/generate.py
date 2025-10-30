@@ -21,6 +21,7 @@ try:
     from core.hybrid_search import get_hybrid_search
     from core.vector_store import get_vector_store
     from core.keyword_extractor import get_keyword_extractor
+    from core.guardrails_manager import get_guardrails_manager
     from utils.config import get_settings
     RAG_AVAILABLE = True
 except ImportError:
@@ -227,11 +228,44 @@ async def generate_text(request: GenerateRequest) -> GenerateResponse:
         GenerateResponse with generated text and metadata
     """
     try:
+        # Initialize guardrails if enabled
+        guardrails_manager = None
+        guardrails_enabled = request.enable_guardrails
+        
+        if guardrails_enabled:
+            try:
+                guardrails_manager = get_guardrails_manager()
+                if not guardrails_manager.is_enabled():
+                    logger.warning("Guardrails requested but not properly initialized")
+                    guardrails_enabled = False
+            except Exception as e:
+                logger.warning(f"Failed to initialize guardrails: {e}")
+                guardrails_enabled = False
+        
         # Validate and analyze prompt
         context_handler = get_context_handler()
         
+        # Apply input filtering if guardrails are enabled
+        filtered_prompt = request.prompt
+        input_filtered = False
+        filtering_reason = None
+        
+        if guardrails_enabled and guardrails_manager:
+            input_result = await guardrails_manager.filter_input(request.prompt)
+            if not input_result["allowed"]:
+                return GenerateResponse(
+                    response=input_result["reason"],
+                    model=request.model,
+                    sources=[],
+                    guardrails_applied=True,
+                    input_filtered=True,
+                    output_filtered=False,
+                    filtering_reason=input_result["reason"]
+                )
+            filtered_prompt = input_result["filtered_input"]
+        
         # Check if RAG is requested
-        augmented_prompt = request.prompt
+        augmented_prompt = filtered_prompt
         sources = []
         
         if request.indices and len(request.indices) > 0:
@@ -241,7 +275,7 @@ async def generate_text(request: GenerateRequest) -> GenerateResponse:
             
             # Fetch relevant context from indices
             relevant_context, rag_sources = await fetch_relevant_context(
-                query=request.prompt,
+                query=filtered_prompt,  # Use filtered prompt for RAG
                 indices=request.indices,
                 top_k=request.search_top_k or 5,
                 min_score=request.search_min_score or 0.0,
@@ -252,7 +286,7 @@ async def generate_text(request: GenerateRequest) -> GenerateResponse:
             
             if relevant_context:
                 # Augment the prompt with context
-                augmented_prompt = f"{relevant_context}\n\n{request.prompt}"
+                augmented_prompt = f"{relevant_context}\n\n{filtered_prompt}"
                 sources.extend(rag_sources)
                 logger.info(f"Prompt augmented with context from {len(request.indices)} indices")
             else:
@@ -332,19 +366,37 @@ async def generate_text(request: GenerateRequest) -> GenerateResponse:
         ollama_service = get_ollama_service()
         result = await ollama_service.generate(modified_request)
         
-        # Get the generated response (no citation text added here - handled by frontend)
+        # Get the generated response
         generated_text = result.get("response", "")
+        
+        # Apply output filtering if guardrails are enabled
+        final_response = generated_text
+        output_filtered = False
+        
+        if guardrails_enabled and guardrails_manager:
+            output_result = await guardrails_manager.filter_output(
+                generated_text, 
+                filtered_prompt
+            )
+            final_response = output_result["filtered_output"]
+            output_filtered = not output_result["allowed"]
+            if output_filtered and not filtering_reason:
+                filtering_reason = output_result.get("reason")
         
         # Build response
         return GenerateResponse(
-            response=generated_text,
+            response=final_response,
             model=result.get("model", request.model),
             sources=sources if sources else None,
             context=result.get("context"),
             total_duration=result.get("total_duration"),
             load_duration=result.get("load_duration"),
             prompt_eval_count=result.get("prompt_eval_count"),
-            eval_count=result.get("eval_count")
+            eval_count=result.get("eval_count"),
+            guardrails_applied=guardrails_enabled,
+            input_filtered=input_filtered,
+            output_filtered=output_filtered,
+            filtering_reason=filtering_reason
         )
         
     except ModelNotFoundError as e:

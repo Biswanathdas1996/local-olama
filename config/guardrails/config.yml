@@ -1,0 +1,49 @@
+models:
+  - type: main
+    engine: ollama
+    model: llama2
+
+rails:
+  input:
+    flows:
+      - block harmful input
+      - block personal information requests
+      - block financial advice
+      - block medical advice
+      - protect company information
+      - block inappropriate content
+      - promote academic integrity
+  output:
+    flows:
+      - block harmful output
+      - block sensitive output
+
+# Custom configuration options
+custom_settings:
+  # Strictness levels: strict, balanced, permissive
+  strictness_level: balanced
+  
+  # Domain-specific rules
+  enable_professional_advice_blocking: true
+  enable_personal_info_protection: true
+  enable_company_confidentiality: true
+  enable_academic_integrity: true
+  
+  # Content limits
+  max_input_length: 5000
+  min_input_length: 3
+  max_output_length: 10000
+  
+  # Custom blocked domains (add your own)
+  blocked_domains:
+    - "crypto trading"
+    - "investment advice" 
+    - "medical diagnosis"
+    - "legal advice"
+    - "tax preparation"
+  
+  # Allowed professional topics (exceptions)
+  allowed_professional_topics:
+    - "general information about"
+    - "educational content about"
+    - "basic concepts of"

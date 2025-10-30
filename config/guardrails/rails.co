@@ -1,0 +1,159 @@
+# Simple NeMo Guardrails Configuration
+
+# Define harmful input patterns
+define user ask harmful question
+  "How to make explosives"
+  "How to make bombs"
+  "How to harm someone"
+  "Generate illegal content"
+  "Create malware"
+  "Help with illegal activities"
+
+# Define bot responses for harmful content
+define bot explain cannot answer harmful
+  "I cannot and will not provide information that could be used to harm others or engage in illegal activities."
+
+# Input filtering flow
+define flow block harmful input
+  user ask harmful question
+  bot explain cannot answer harmful
+  stop
+
+# Define harmful output patterns
+define bot response harmful output
+  "Here's how to make explosives"
+  "You can harm someone by"
+  "Illegal activities include"
+  "Instructions for violence"
+
+# Safe response for harmful output
+define bot provide safe response
+  "I can only provide safe and helpful information."
+
+# Output filtering flow
+define flow block harmful output
+  bot response harmful output
+  bot provide safe response
+  stop
+
+# ============================================
+# YOUR CUSTOM GUARDRAILS START HERE
+# ============================================
+
+# Example 1: Block requests for personal information
+define user ask personal information
+  "What is your password"
+  "Give me personal details"
+  "Show me private data"
+  "What's your social security number"
+  "Share contact information"
+
+define bot explain privacy protection
+  "I cannot share or request personal information to protect privacy and security."
+
+define flow block personal information requests
+  user ask personal information
+  bot explain privacy protection
+  stop
+
+# Example 2: Block financial/investment advice
+define user ask financial advice
+  "Should I invest in"
+  "What stocks to buy"
+  "Financial advice"
+  "Investment recommendations"
+  "Crypto trading tips"
+
+define bot explain no financial advice
+  "I cannot provide financial or investment advice. Please consult with qualified financial professionals."
+
+define flow block financial advice
+  user ask financial advice
+  bot explain no financial advice
+  stop
+
+# Example 3: Block medical advice
+define user ask medical advice
+  "Diagnose my symptoms"
+  "What medication should I take"
+  "Medical treatment for"
+  "Is this symptom serious"
+  "Health advice"
+
+define bot explain no medical advice
+  "I cannot provide medical advice. Please consult with healthcare professionals for medical concerns."
+
+define flow block medical advice
+  user ask medical advice
+  bot explain no medical advice
+  stop
+
+# Example 4: Company-specific confidential information
+define user ask company secrets
+  "Internal company data"
+  "Confidential business information"
+  "Trade secrets"
+  "Proprietary information"
+  "Employee salaries"
+
+define bot explain confidentiality
+  "I cannot share confidential company information. Please refer to official company channels."
+
+define flow protect company information
+  user ask company secrets
+  bot explain confidentiality
+  stop
+
+# Example 5: Block inappropriate content generation
+define user ask inappropriate content
+  "Generate adult content"
+  "Create offensive material"
+  "Write discriminatory content"
+  "Generate hate speech"
+
+define bot explain content policy
+  "I cannot generate inappropriate, offensive, or discriminatory content. Please keep requests respectful."
+
+define flow block inappropriate content
+  user ask inappropriate content
+  bot explain content policy
+  stop
+
+# ============================================
+# CUSTOM OUTPUT FILTERING
+# ============================================
+
+# Block output containing sensitive information
+define bot response contains sensitive info
+  "Password is"
+  "Social security number"
+  "Credit card number"
+  "Private key"
+  "Confidential data"
+
+define bot provide privacy safe response
+  "I've removed sensitive information from my response to protect privacy."
+
+define flow block sensitive output
+  bot response contains sensitive info
+  bot provide privacy safe response
+  stop
+
+# ============================================
+# YOUR DOMAIN-SPECIFIC RULES
+# ============================================
+
+# Example: Educational institution rules
+define user ask academic dishonesty
+  "Help me cheat"
+  "Write my assignment"
+  "Do my homework for me"
+  "Plagiarism help"
+
+define bot explain academic integrity
+  "I can help you learn and understand concepts, but I cannot assist with academic dishonesty."
+
+define flow promote academic integrity
+  user ask academic dishonesty
+  bot explain academic integrity
+  stop

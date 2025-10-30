@@ -113,7 +113,7 @@ export function LandingPage() {
               
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
                 <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                  Local LLM Platform
+                  LLPlatform
                 </span>
                 <br />
                 <span className="text-gray-900">Your Data. Your Control.</span>
