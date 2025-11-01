@@ -9,6 +9,8 @@ import { TrainingPage } from './pages/TrainingPage';
 import { ConnectPage } from './pages/ConnectPage';
 import { LandingPage } from './pages/LandingPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
+import { MetabasePage } from './pages/MetabasePage';
+import { DashboardViewPage } from './pages/DashboardViewPage';
 
 function App() {
   return (
@@ -16,6 +18,9 @@ function App() {
       <Routes>
         {/* Landing page without Layout (standalone marketing page) */}
         <Route path="/" element={<LandingPage />} />
+        
+        {/* Dashboard view without Layout (fullscreen) */}
+        <Route path="/dashboard/:dashboardUrl" element={<DashboardViewPage />} />
         
         {/* App routes with Layout */}
         <Route path="/*" element={
@@ -28,6 +33,7 @@ function App() {
               <Route path="/templates" element={<TemplatesPage />} />
               <Route path="/saved-templates" element={<SavedTemplatesPage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
+              <Route path="/metabase" element={<MetabasePage />} />
               <Route path="/connect" element={<ConnectPage />} />
             </Routes>
           </Layout>

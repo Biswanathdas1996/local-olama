@@ -1,5 +1,5 @@
 @echo off
-REM Stop All Services - Ollama Server, Backend & Frontend
+REM Stop All Services - Ollama Server, Backend, Frontend & Metabase
 
 echo === Local LLM Platform - Stopping All Services ===
 echo.
@@ -67,7 +67,7 @@ if %BACKEND_STOPPED% equ 1 (
 echo.
 
 REM Stop Frontend (Node/Vite on common ports)
-echo [3/3] Stopping frontend server...
+echo [3/4] Stopping frontend server...
 
 set FRONTEND_STOPPED=0
 
@@ -102,6 +102,41 @@ if %FRONTEND_STOPPED% equ 1 (
     echo [OK] Frontend server stopped
 ) else (
     echo [INFO] Frontend server not running
+)
+
+echo.
+
+REM Stop Metabase (Java on port 3001)
+echo [4/4] Stopping Metabase server...
+
+set METABASE_STOPPED=0
+
+REM Check port 3001
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :3001') do (
+    taskkill /F /PID %%a >nul 2>nul
+    if %errorlevel% equ 0 (
+        set METABASE_STOPPED=1
+        set /a PROCESSES_KILLED+=1
+    )
+)
+
+REM Also kill java processes running metabase.jar
+for /f "tokens=2" %%a in ('tasklist /FI "IMAGENAME eq java.exe" /FO LIST ^| findstr "PID:"') do (
+    REM Get command line to check if it's running metabase.jar
+    wmic process where "ProcessId=%%a" get CommandLine 2>nul | findstr /i "metabase.jar" >nul
+    if %errorlevel% equ 0 (
+        taskkill /F /PID %%a >nul 2>nul
+        if %errorlevel% equ 0 (
+            set METABASE_STOPPED=1
+            set /a PROCESSES_KILLED+=1
+        )
+    )
+)
+
+if %METABASE_STOPPED% equ 1 (
+    echo [OK] Metabase server stopped
+) else (
+    echo [INFO] Metabase server not running
 )
 
 echo.

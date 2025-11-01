@@ -13,10 +13,11 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 from datetime import datetime
 
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, Request, status, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.staticfiles import StaticFiles
 
 from utils.config import get_settings
 from utils.logger import configure_logging, get_logger
@@ -28,6 +29,7 @@ logger = get_logger(__name__)
 from routes import models_router, generate_router
 from routes.ingestion_routes import router as ingestion_router
 from routes.analytics import router as analytics_router
+from routes.metabase_routes import router as metabase_router
 
 # Make training optional (requires additional dependencies)
 try:
@@ -361,6 +363,23 @@ async def server_info():
         }
 
 
+# Serve analytics page
+@app.get(
+    "/analytics.html",
+    tags=["Frontend"],
+    summary="Analytics Dashboard",
+    description="Serve the Metabase analytics dashboard page."
+)
+async def analytics_page():
+    """Serve the analytics dashboard HTML page."""
+    import os
+    analytics_path = os.path.join(os.path.dirname(__file__), "frontend", "analytics.html")
+    if os.path.exists(analytics_path):
+        return FileResponse(analytics_path)
+    else:
+        raise HTTPException(status_code=404, detail="Analytics page not found")
+
+
 # Root endpoint
 @app.get(
     "/",
@@ -376,7 +395,8 @@ async def root():
         "status": "running",
         "docs": "/docs",
         "redoc": "/redoc",
-        "health": "/health"
+        "health": "/health",
+        "analytics": "/analytics.html"
     }
 
 
@@ -385,6 +405,7 @@ app.include_router(models_router)
 app.include_router(generate_router)
 app.include_router(ingestion_router)
 app.include_router(analytics_router)
+app.include_router(metabase_router)
 
 # Only include training router if available
 if TRAINING_AVAILABLE and training_router:
@@ -394,6 +415,7 @@ else:
     logger.warning("Training routes not available - install dependencies to enable")
 
 logger.info("Analytics routes registered")
+logger.info("Metabase analytics routes registered")
 
 
 if __name__ == "__main__":

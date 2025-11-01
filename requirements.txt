@@ -6,6 +6,7 @@ pydantic-settings==2.1.0
 
 # HTTP Client
 httpx==0.25.1
+aiohttp==3.9.1  # For Metabase API integration
 
 # Logging
 structlog==23.2.0
@@ -74,6 +75,9 @@ requests>=2.31.0
 typing-extensions>=4.7.0
 pyyaml>=6.0
 pandas>=2.0.0
+openpyxl>=3.1.0  # For Excel file reading
+xlrd>=2.0.0  # For older Excel formats
+aiofiles>=23.0.0  # For async file operations
 
 # Model Training & Fine-tuning
 peft>=0.7.0
