@@ -1,13 +1,36 @@
 """
 Main FastAPI application.
-Configures and runs the Local LLM Platform with Ollama integration.
+Configures and runs the LLM-365 with Ollama integration.
 """
 import os
+from pathlib import Path
 
-# Force offline mode for Hugging Face and transformers BEFORE any imports
-os.environ['HF_HUB_OFFLINE'] = '1'
-os.environ['TRANSFORMERS_OFFLINE'] = '1'
-os.environ['HF_DATASETS_OFFLINE'] = '1'
+# Smart offline mode: Check if Docling models are cached
+# If models exist, use offline mode (faster, no network needed)
+# If models missing, enable downloads (one-time setup)
+def configure_huggingface_mode():
+    """Configure HF Hub mode based on cached model availability"""
+    hf_home = os.environ.get('HF_HOME', os.path.join(os.path.expanduser('~'), '.cache', 'huggingface'))
+    hub_cache = Path(hf_home) / 'hub'
+    
+    # Check if Docling models are cached (look for model files)
+    models_cached = hub_cache.exists() and any(hub_cache.glob('models--*'))
+    
+    if models_cached:
+        # Models already downloaded - use offline mode
+        os.environ['HF_HUB_OFFLINE'] = '1'
+        os.environ['TRANSFORMERS_OFFLINE'] = '1'
+        print(f"✅ Using OFFLINE mode - Docling models found in cache: {hub_cache}")
+    else:
+        # Models not cached - enable downloads (one-time)
+        os.environ['HF_HUB_OFFLINE'] = '0'
+        os.environ['TRANSFORMERS_OFFLINE'] = '0'
+        print(f"📥 Using ONLINE mode - Will download Docling models to: {hub_cache}")
+        print(f"   (This is a one-time download, ~500MB-1GB)")
+    
+    os.environ['HF_DATASETS_OFFLINE'] = '1'  # Datasets not needed
+
+configure_huggingface_mode()
 
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
@@ -92,7 +115,7 @@ app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     description="""
-    ## Local LLM Platform with Ollama Integration
+    ## LLM-365 with Ollama Integration
     
     A backend-only FastAPI platform for running local Large Language Models (LLMs) 
     completely offline using Ollama.

@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     ollama_timeout: int = 300
     
     # Application Configuration
-    app_name: str = "Local LLM Platform"
+    app_name: str = "LLM-365"
     app_version: str = "1.0.0"
     debug: bool = False
     log_level: str = "INFO"

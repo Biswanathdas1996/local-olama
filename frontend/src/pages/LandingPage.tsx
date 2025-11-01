@@ -113,7 +113,7 @@ export function LandingPage() {
               
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
                 <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                  LLPlatform
+                  LLM-365
                 </span>
                 <br />
                 <span className="text-gray-900">Your Data. Your Control.</span>
@@ -383,7 +383,7 @@ export function LandingPage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-3xl sm:text-4xl font-bold mb-6">
-              Why Choose Local LLM Platform?
+              Why Choose LLM-365?
             </h2>
             
             <div className="grid sm:grid-cols-3 gap-8 mt-12">
@@ -444,7 +444,7 @@ export function LandingPage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="text-2xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-              Local LLM Platform
+              LLM-365
             </div>
             <p className="text-gray-400 text-sm">
               Enterprise-Grade AI • 100% Private • Zero API Costs

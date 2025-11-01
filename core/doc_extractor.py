@@ -98,6 +98,17 @@ class DocumentExtractor:
         
         if DOCLING_AVAILABLE:
             try:
+                # Temporarily enable online mode if models not cached
+                import os
+                original_offline = os.environ.get('HF_HUB_OFFLINE')
+                hf_home = os.environ.get('HF_HOME', os.path.join(os.path.expanduser('~'), '.cache', 'huggingface'))
+                hub_cache = Path(hf_home) / 'hub'
+                models_cached = hub_cache.exists() and any(hub_cache.glob('models--*'))
+                
+                if not models_cached:
+                    logger.info("📥 Docling models not found in cache - enabling downloads for initialization...")
+                    os.environ['HF_HUB_OFFLINE'] = '0'
+                
                 # Configure Docling with the new API (v2.x)
                 # Create format options for PDF with OCR settings
                 format_options = {}
@@ -109,6 +120,8 @@ class DocumentExtractor:
                         pipeline_options=pipeline_options
                     )
                 
+                logger.info("Initializing Docling converter (may download models on first use)...")
+                
                 self.converter = DocumentConverter(
                     allowed_formats=[
                         InputFormat.PDF,
@@ -118,19 +131,45 @@ class DocumentExtractor:
                     ],
                     format_options=format_options if format_options else None,
                 )
+                
+                # Restore original offline setting after initialization
+                if not models_cached and original_offline:
+                    os.environ['HF_HUB_OFFLINE'] = original_offline
+                    logger.info("✅ Docling models downloaded - switching back to offline mode")
+                
                 logger.info("✅ Docling converter initialized successfully")
                 print("\n" + "="*80)
                 print("✅ DOCLING INITIALIZED")
                 print(f"   OCR Enabled: {use_ocr}")
                 print(f"   Output Directory: {self.output_dir}")
                 print(f"   Supported Formats: PDF, DOCX, HTML, PPTX")
+                print(f"   Mode: {'OFFLINE (models cached)' if models_cached else 'Downloaded models (now cached)'}")
                 print("="*80 + "\n")
             except Exception as e:
+                error_msg = str(e)
                 logger.warning(f"❌ Docling initialization failed: {e}. Using fallback extractors.")
                 print("\n" + "!"*80)
                 print("⚠️  DOCLING INITIALIZATION FAILED")
-                print(f"   Error: {str(e)[:100]}")
-                print("   Falling back to basic extractors")
+                print(f"   Error: {error_msg[:200]}")
+                
+                # Provide helpful suggestions based on error type
+                if "snapshot" in error_msg.lower() or "cached" in error_msg.lower() or "revision" in error_msg.lower():
+                    print("\n   🔧 LIKELY CAUSE: Model cache issue")
+                    print("   💡 SOLUTIONS:")
+                    print("      1. Run: .\\scripts\\fix_docling_cache.ps1")
+                    print("      2. Or manually clear cache:")
+                    print("         - Delete: %USERPROFILE%\\.cache\\huggingface")
+                    print("         - Delete: %USERPROFILE%\\.docling")
+                    print("      3. Ensure stable internet connection for model download")
+                    print("      4. Check disk space in cache directory")
+                elif "connection" in error_msg.lower() or "timeout" in error_msg.lower():
+                    print("\n   🔧 LIKELY CAUSE: Network issue")
+                    print("   💡 SOLUTIONS:")
+                    print("      1. Check your internet connection")
+                    print("      2. Try again in a few minutes")
+                    print("      3. Check if Hugging Face is accessible")
+                
+                print("\n   Falling back to basic extractors")
                 print("!"*80 + "\n")
                 self.converter = None
         else:
