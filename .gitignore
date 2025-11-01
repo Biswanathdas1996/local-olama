@@ -210,3 +210,7 @@ test_analytics_*.py
 monitor_analytics_*.py
 analytics_performance.log
 ANALYTICS_PERFORMANCE_REPORT.md
+
+# Metabase large files
+metabase.jar
+metabase/plugins/*.jar
