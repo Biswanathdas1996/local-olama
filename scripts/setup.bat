@@ -239,15 +239,15 @@ if not exist "%JAVA_PATH%" (
 )
 
 REM Download Metabase if not present
-if not exist "metabase.jar" (
+if not exist "metabase\metabase.jar" (
     echo Downloading Metabase...
     echo This may take several minutes (file size ~300MB)...
-    powershell -Command "& {[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri 'https://downloads.metabase.com/v0.48.0/metabase.jar' -OutFile 'metabase.jar'}"
+    powershell -Command "& {[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri 'https://downloads.metabase.com/v0.48.0/metabase.jar' -OutFile 'metabase\metabase.jar'}"
     
     if %errorlevel% neq 0 (
         echo [ERROR] Failed to download Metabase
         echo You can manually download it from: https://www.metabase.com/start/oss/jar
-        echo And place it in the project root directory
+        echo And place it in the metabase directory
     ) else (
         echo [OK] Metabase downloaded
     )
@@ -356,7 +356,7 @@ echo   * Ollama Server:  http://localhost:11434
 echo   * Backend API:    http://localhost:8000
 echo   * API Docs:       http://localhost:8000/docs
 echo   * Frontend UI:    http://localhost:3000
-if exist "metabase.jar" (
+if exist "metabase\metabase.jar" (
     echo   * Metabase Analytics: http://localhost:3001
 )
 echo.

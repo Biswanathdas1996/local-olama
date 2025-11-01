@@ -153,9 +153,9 @@ echo [4/4] Metabase Analytics (Port 3001)
 echo ----------------------------------------
 
 REM Check if Metabase JAR exists
-if not exist "metabase.jar" (
+if not exist "metabase\metabase.jar" (
     echo Status: NOT INSTALLED
-    echo Info: metabase.jar not found in project root
+    echo Info: metabase\metabase.jar not found
     echo Install: Run scripts\setup.bat to install Metabase
     set /a SERVICES_TOTAL-=1
 ) else (
@@ -217,7 +217,7 @@ if %SERVICES_RUNNING% equ %SERVICES_TOTAL% (
             )
         )
     )
-    if exist "metabase.jar" (
+    if exist "metabase\metabase.jar" (
         netstat -ano | findstr :3001 | findstr LISTENING >nul 2>nul
         if %errorlevel% equ 0 (
             echo   * Metabase:       http://localhost:3001

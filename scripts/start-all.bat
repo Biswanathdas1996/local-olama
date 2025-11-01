@@ -26,8 +26,8 @@ if not exist "frontend\node_modules\" (
 REM Check if Metabase JAR exists
 set "JAVA_PATH=C:\Program Files\Microsoft\jdk-17.0.17.10-hotspot\bin\java.exe"
 
-if not exist "metabase.jar" (
-    echo [WARNING] metabase.jar not found!
+if not exist "metabase\metabase.jar" (
+    echo [WARNING] metabase\metabase.jar not found!
     echo Metabase analytics will not be available.
     echo Run setup-metabase.ps1 to install Metabase.
     echo.
@@ -91,7 +91,7 @@ echo.
 REM 4. Start Metabase Server (if available)
 if %SKIP_METABASE% EQU 0 (
     echo [4/4] Starting Metabase analytics on port 3001...
-    start "Metabase Server" powershell -NoExit -Command "cd '%~dp0..'; Write-Host 'Metabase Server' -ForegroundColor Cyan; Write-Host 'Port: 3001' -ForegroundColor Green; Write-Host ''; $env:MB_JETTY_PORT='3001'; $env:MB_DB_FILE='metabase\data\metabase.db'; $env:MB_CHECK_FOR_UPDATES='false'; $env:MB_ANON_TRACKING_ENABLED='false'; $env:MB_SEND_EMAIL_ON_FIRST_LOGIN_FROM_NEW_DEVICE='false'; $env:MB_DISABLE_SESSION_THROTTLE='true'; & '%JAVA_PATH%' -jar metabase.jar"
+    start "Metabase Server" powershell -NoExit -Command "cd '%~dp0..'; Write-Host 'Metabase Server' -ForegroundColor Cyan; Write-Host 'Port: 3001' -ForegroundColor Green; Write-Host ''; $env:MB_JETTY_PORT='3001'; $env:MB_DB_FILE='metabase\data\metabase.db'; $env:MB_CHECK_FOR_UPDATES='false'; $env:MB_ANON_TRACKING_ENABLED='false'; $env:MB_SEND_EMAIL_ON_FIRST_LOGIN_FROM_NEW_DEVICE='false'; $env:MB_DISABLE_SESSION_THROTTLE='true'; & '%JAVA_PATH%' -jar metabase\metabase.jar"
     echo [OK] Metabase server started
 ) else (
     echo [4/4] Skipping Metabase (not installed)
