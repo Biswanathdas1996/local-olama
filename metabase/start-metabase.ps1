@@ -13,7 +13,7 @@ Write-Host ""
 
 # Set environment variables
 $env:MB_DB_TYPE = "h2"
-$env:MB_DB_FILE = Join-Path $MetabasePath "metabase.db"
+$env:MB_DB_FILE = Join-Path $MetabasePath "data\metabase.db"
 $env:MB_JETTY_PORT = "3001"
 
 # Start Metabase
