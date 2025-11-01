@@ -7,12 +7,13 @@ const navigation = [
   { name: 'Home', href: '/', icon: FiHome },
   { name: 'Chat', href: '/chat', icon: FiMessageSquare },
   { name: 'BYOD', href: '/documents', icon: FiFileText },
+  { name: 'Data Insights', href: '/metabase', icon: FiDatabase },
   { name: 'Models', href: '/models', icon: FiCpu },
   { name: 'Training', href: '/training', icon: FiZap },
   { name: 'Templates', href: '/templates', icon: FiLayout },
   { name: 'Saved Templates', href: '/saved-templates', icon: FiBookmark },
   { name: 'Analytics', href: '/analytics', icon: FiBarChart },
-  { name: 'Metabase', href: '/metabase', icon: FiDatabase },
+ 
   { name: 'Connect', href: '/connect', icon: FiWifi },
 ];
 
@@ -82,30 +83,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
             })}
           </nav>
 
-          {/* Footer */}
-          <div id="sidebar-footer" className="p-3 sm:p-4 border-t border-blue-100/50">
-            <div id="footer-info-card" className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-3 sm:p-4 border border-blue-200/50 tech-shadow relative overflow-hidden">
-              <div id="footer-bg-decoration" className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-400/10 to-indigo-400/10 rounded-full blur-2xl" />
-              <div id="footer-content" className="relative z-10">
-                <div id="footer-title" className="flex items-center space-x-2 mb-2">
-                  <div id="footer-pulse-indicator" className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                  <p className="text-xs sm:text-sm font-bold gradient-text truncate">Local LLM Platform</p>
-                </div>
-                <p className="text-xs text-slate-600 font-mono">v1.0.0</p>
-                <div id="footer-status-badges" className="mt-2 flex items-center space-x-1.5 sm:space-x-2 flex-wrap text-xs text-slate-500">
-                  <span className="flex items-center space-x-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                    <span>Offline</span>
-                  </span>
-                  <span>•</span>
-                  <span className="flex items-center space-x-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                    <span>Private</span>
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
         </aside>
 
         {/* Main content */}

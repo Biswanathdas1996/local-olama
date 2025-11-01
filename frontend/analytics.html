@@ -3,202 +3,262 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Metabase Analytics - Olama</title>
+    <title>Data Analytics - Olama</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        .glass-card {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(75, 85, 99, 0.3);
         }
         
         .gradient-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
         
+        .compact-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .compact-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            border-color: rgba(99, 102, 241, 0.5);
+        }
+        
         .upload-zone {
-            border: 2px dashed #cbd5e0;
+            border: 2px dashed rgba(107, 114, 128, 0.5);
             transition: all 0.3s ease;
         }
         
         .upload-zone.dragover {
-            border-color: #667eea;
-            background-color: rgba(102, 126, 234, 0.1);
+            border-color: #6366f1;
+            background-color: rgba(99, 102, 241, 0.05);
         }
         
-        .insight-card {
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        .stat-badge {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.4rem;
         }
         
-        .insight-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        .action-btn {
+            padding: 0.35rem 0.75rem;
+            font-size: 0.8rem;
+            transition: all 0.15s ease;
+        }
+        
+        .action-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .compact-modal {
+            animation: slideUp 0.2s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .nav-compact {
+            height: 3.5rem;
+        }
+        
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
         }
     </style>
 </head>
-<body class="bg-gray-900 text-white min-h-screen">
-    <!-- Navigation -->
-    <nav class="bg-gray-800 border-b border-gray-700">
+<body class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white min-h-screen">
+    <!-- Compact Navigation -->
+    <nav class="glass-card nav-compact sticky top-0 z-40 border-b border-gray-700">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <a href="/" class="text-2xl font-bold gradient-bg bg-clip-text text-transparent">
-                        Olama Analytics
+            <div class="flex justify-between items-center h-full">
+                <div class="flex items-center space-x-6">
+                    <a href="/" class="text-xl font-bold gradient-bg bg-clip-text text-transparent">
+                        <i class="fas fa-chart-line mr-2"></i>Olama Analytics
                     </a>
-                    <div class="hidden md:ml-6 md:flex md:space-x-8">
-                        <a href="/" class="text-gray-300 hover:text-white px-3 py-2 text-sm font-medium">
-                            Home
+                    <div class="hidden md:flex space-x-4">
+                        <a href="/" class="text-gray-300 hover:text-white text-sm transition">
+                            <i class="fas fa-home mr-1"></i>Home
                         </a>
-                        <a href="#" class="border-b-2 border-indigo-500 text-white px-3 py-2 text-sm font-medium">
-                            Data Analytics
+                        <a href="#" class="text-indigo-400 text-sm">
+                            <i class="fas fa-database mr-1"></i>Analytics
                         </a>
                     </div>
                 </div>
-                <div class="flex items-center">
-                    <span id="statusIndicator" class="flex items-center text-sm text-gray-400">
+                <div class="flex items-center space-x-4">
+                    <span id="statusIndicator" class="flex items-center text-xs text-gray-400">
                         <span class="h-2 w-2 rounded-full bg-gray-500 mr-2"></span>
-                        <span>Checking status...</span>
+                        <span class="hidden sm:inline">Checking...</span>
                     </span>
+                    <button onclick="loadDatasets()" class="text-gray-400 hover:text-white transition" title="Refresh">
+                        <i class="fas fa-sync-alt text-sm"></i>
+                    </button>
                 </div>
             </div>
         </div>
     </nav>
 
     <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Header -->
-        <div class="mb-8">
-            <h1 class="text-4xl font-bold mb-2">Data Analytics Hub</h1>
-            <p class="text-gray-400">Upload Excel/CSV files and generate interactive dashboards with AI-powered insights</p>
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <button onclick="showUploadModal()" class="glass-effect p-6 rounded-lg hover:bg-indigo-600 transition-all group">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h3 class="text-lg font-semibold mb-1">Upload Dataset</h3>
-                        <p class="text-sm text-gray-400">Excel or CSV files</p>
-                    </div>
-                    <svg class="w-8 h-8 text-indigo-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                    </svg>
-                </div>
-            </button>
-
-            <button onclick="openMetabase()" class="glass-effect p-6 rounded-lg hover:bg-purple-600 transition-all group">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h3 class="text-lg font-semibold mb-1">Open Metabase</h3>
-                        <p class="text-sm text-gray-400">Full analytics platform</p>
-                    </div>
-                    <svg class="w-8 h-8 text-purple-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                    </svg>
-                </div>
-            </button>
-
-            <button onclick="loadDatasets()" class="glass-effect p-6 rounded-lg hover:bg-green-600 transition-all group">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h3 class="text-lg font-semibold mb-1">My Datasets</h3>
-                        <p class="text-sm text-gray-400"><span id="datasetCount">0</span> datasets uploaded</p>
-                    </div>
-                    <svg class="w-8 h-8 text-green-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
-                    </svg>
-                </div>
-            </button>
-        </div>
-
-        <!-- Datasets List -->
-        <div class="glass-effect rounded-lg p-6 mb-8">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-2xl font-bold">Datasets</h2>
-                <button onclick="loadDatasets()" class="text-sm text-indigo-400 hover:text-indigo-300">
-                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                    </svg>
-                    Refresh
-                </button>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <!-- Compact Header -->
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                <h1 class="text-2xl font-bold">Data Analytics</h1>
+                <p class="text-sm text-gray-400">Manage datasets and create interactive dashboards</p>
             </div>
-            <div id="datasetsList" class="space-y-4">
-                <div class="text-center text-gray-500 py-8">
+            <button onclick="showUploadModal()" class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2">
+                <i class="fas fa-plus"></i>
+                <span>Upload Dataset</span>
+            </button>
+        </div>
+
+        <!-- Compact Quick Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+            <div class="glass-card p-3 rounded-lg compact-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-400 mb-1">Total Datasets</p>
+                        <p id="datasetCount" class="text-2xl font-bold">0</p>
+                    </div>
+                    <div class="text-indigo-400 text-2xl">
+                        <i class="fas fa-database"></i>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="openMetabase()" class="glass-card p-3 rounded-lg compact-card hover:bg-gray-700 text-left">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-400 mb-1">Metabase</p>
+                        <p class="text-sm font-medium">Open Platform</p>
+                    </div>
+                    <div class="text-purple-400 text-2xl">
+                        <i class="fas fa-external-link-alt"></i>
+                    </div>
+                </div>
+            </button>
+
+            <div class="glass-card p-3 rounded-lg compact-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-400 mb-1">Total Rows</p>
+                        <p id="totalRows" class="text-2xl font-bold">0</p>
+                    </div>
+                    <div class="text-green-400 text-2xl">
+                        <i class="fas fa-table"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card p-3 rounded-lg compact-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-400 mb-1">Storage Used</p>
+                        <p id="totalStorage" class="text-2xl font-bold">0 MB</p>
+                    </div>
+                    <div class="text-yellow-400 text-2xl">
+                        <i class="fas fa-hdd"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Compact Datasets List -->
+        <div class="glass-card rounded-lg p-4">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="section-title">Your Datasets</h2>
+                <div class="flex items-center space-x-2">
+                    <input type="text" id="searchInput" placeholder="Search datasets..." class="bg-gray-700 text-sm rounded px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-48" onkeyup="filterDatasets()">
+                </div>
+            </div>
+            <div id="datasetsList" class="space-y-2">
+                <div class="text-center text-gray-500 py-6 text-sm">
                     Loading datasets...
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Upload Modal -->
-    <div id="uploadModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-gray-800 rounded-lg p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold">Upload Dataset</h2>
-                <button onclick="closeUploadModal()" class="text-gray-400 hover:text-white">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
+    <!-- Compact Upload Modal -->
+    <div id="uploadModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50 p-4">
+        <div class="glass-card compact-modal rounded-xl p-6 max-w-xl w-full max-h-[85vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold flex items-center">
+                    <i class="fas fa-upload mr-2 text-indigo-400"></i>
+                    Upload Dataset
+                </h2>
+                <button onclick="closeUploadModal()" class="text-gray-400 hover:text-white transition">
+                    <i class="fas fa-times text-lg"></i>
                 </button>
             </div>
 
             <form id="uploadForm" onsubmit="uploadDataset(event)">
-                <!-- File Upload Zone -->
-                <div id="dropZone" class="upload-zone rounded-lg p-8 mb-4 text-center cursor-pointer">
+                <!-- Compact File Upload Zone -->
+                <div id="dropZone" class="upload-zone rounded-lg p-6 mb-3 text-center cursor-pointer bg-gray-800">
                     <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" class="hidden" onchange="handleFileSelect(event)">
-                    <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                    </svg>
-                    <p class="text-lg mb-2">Drop your file here or <span class="text-indigo-400">browse</span></p>
-                    <p class="text-sm text-gray-500">Supports CSV, Excel (.xlsx, .xls) - Up to 2GB</p>
-                    <p id="selectedFileName" class="text-green-400 mt-2 hidden"></p>
+                    <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
+                    <p class="text-sm mb-1">Drop file here or <span class="text-indigo-400">browse</span></p>
+                    <p class="text-xs text-gray-500">CSV, Excel (.xlsx, .xls) - Max 2GB</p>
+                    <p id="selectedFileName" class="text-green-400 text-sm mt-2 hidden"></p>
                 </div>
 
-                <!-- Dataset Info -->
-                <div class="space-y-4 mb-6">
+                <!-- Compact Dataset Info -->
+                <div class="space-y-3 mb-4">
                     <div>
-                        <label class="block text-sm font-medium mb-2">Dataset Name (optional)</label>
-                        <input type="text" id="datasetName" class="w-full bg-gray-700 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="My Dataset">
+                        <label class="block text-xs font-medium mb-1 text-gray-400">Dataset Name (optional)</label>
+                        <input type="text" id="datasetName" class="w-full bg-gray-700 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="My Dataset">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium mb-2">Description (optional)</label>
-                        <textarea id="datasetDescription" class="w-full bg-gray-700 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" rows="3" placeholder="Describe your dataset..."></textarea>
+                        <label class="block text-xs font-medium mb-1 text-gray-400">Description (optional)</label>
+                        <textarea id="datasetDescription" class="w-full bg-gray-700 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" rows="2" placeholder="Brief description..."></textarea>
                     </div>
                 </div>
 
-                <!-- Progress -->
+                <!-- Compact Progress -->
                 <div id="uploadProgress" class="hidden mb-4">
-                    <div class="flex justify-between mb-2">
-                        <span class="text-sm">Uploading...</span>
-                        <span id="progressPercent" class="text-sm">0%</span>
+                    <div class="flex justify-between mb-1 text-xs">
+                        <span>Uploading...</span>
+                        <span id="progressPercent">0%</span>
                     </div>
-                    <div class="w-full bg-gray-700 rounded-full h-2">
-                        <div id="progressBar" class="bg-indigo-600 h-2 rounded-full transition-all" style="width: 0%"></div>
+                    <div class="w-full bg-gray-700 rounded-full h-1.5">
+                        <div id="progressBar" class="bg-indigo-600 h-1.5 rounded-full transition-all" style="width: 0%"></div>
                     </div>
                 </div>
 
-                <!-- Buttons -->
-                <div class="flex justify-end space-x-4">
-                    <button type="button" onclick="closeUploadModal()" class="px-6 py-2 bg-gray-700 rounded hover:bg-gray-600 transition">
+                <!-- Compact Buttons -->
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeUploadModal()" class="px-4 py-2 bg-gray-700 rounded text-sm hover:bg-gray-600 transition">
                         Cancel
                     </button>
-                    <button type="submit" id="uploadButton" class="px-6 py-2 bg-indigo-600 rounded hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                        Upload & Analyze
+                    <button type="submit" id="uploadButton" class="px-4 py-2 bg-indigo-600 rounded text-sm hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fas fa-upload mr-1"></i>Upload
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Dataset Detail Modal -->
-    <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-gray-800 rounded-lg p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h2 id="detailTitle" class="text-2xl font-bold">Dataset Details</h2>
-                <button onclick="closeDetailModal()" class="text-gray-400 hover:text-white">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
+    <!-- Compact Dataset Detail Modal -->
+    <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50 p-4">
+        <div class="glass-card compact-modal rounded-xl p-6 max-w-4xl w-full max-h-[85vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 id="detailTitle" class="text-xl font-bold flex items-center">
+                    <i class="fas fa-database mr-2 text-indigo-400"></i>
+                    Dataset Details
+                </h2>
+                <button onclick="closeDetailModal()" class="text-gray-400 hover:text-white transition">
+                    <i class="fas fa-times text-lg"></i>
                 </button>
             </div>
             <div id="detailContent"></div>
