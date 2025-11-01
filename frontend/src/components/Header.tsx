@@ -15,7 +15,7 @@ export function Header() {
             </div>
             <div className="min-w-0 flex-1">
               <h1 className="text-xs sm:text-sm md:text-base lg:text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent truncate leading-tight">
-                Local LLM Platform
+                LLM-365
               </h1>
               <p className="text-[9px] sm:text-[10px] md:text-xs text-gray-500 truncate hidden sm:block leading-tight mt-0.5">
                 Fully Offline and most secure LLM Hosting and Management
