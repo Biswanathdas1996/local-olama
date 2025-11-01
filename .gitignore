@@ -156,16 +156,8 @@ desktop.ini
 *.local
 
 # Project Specific - Data and Models
-# Vector Store Data
-data/vector_store/
-data/vector_store_backup/
-data/keyword_index/
-
-# Training Data (keep structure, ignore actual data)
-data/training_data/*.jsonl
-data/custom_datasets/*/
-!data/custom_datasets/.gitkeep
-data/custom_datasets/datasets_metadata.json
+# Ignore entire data folder
+data/
 
 # Model Files and Checkpoints (typically large)
 models/checkpoints/*/
