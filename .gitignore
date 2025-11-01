@@ -214,6 +214,6 @@ ANALYTICS_PERFORMANCE_REPORT.md
 # Metabase large files
 metabase.jar
 metabase/plugins/*.jar
-
+metabase/data/
 # Duplicate plugins folder (use metabase/plugins instead)
 /plugins/
