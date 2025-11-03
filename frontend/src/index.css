@@ -659,3 +659,12 @@
   background: #94A3B8;
 }
 
+/* Hide unwanted Metabase elements in iframe */
+iframe .emotion-pqcewr.e4w71dr4 {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+}

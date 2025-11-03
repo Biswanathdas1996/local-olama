@@ -23,7 +23,7 @@ if not exist "frontend\node_modules\" (
     exit /b 1
 )
 
-REM Check if Metabase JAR exists
+REM Check if Metabase JAR exists    
 set "JAVA_PATH=C:\Program Files\Microsoft\jdk-17.0.17.10-hotspot\bin\java.exe"
 
 if not exist "metabase\metabase.jar" (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FiArrowLeft, FiExternalLink } from 'react-icons/fi';
 
@@ -6,6 +6,7 @@ export function DashboardViewPage() {
   const { dashboardUrl } = useParams<{ dashboardUrl: string }>();
   const navigate = useNavigate();
   const [decodedUrl, setDecodedUrl] = useState('');
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     if (dashboardUrl) {
@@ -25,6 +26,38 @@ export function DashboardViewPage() {
       setDecodedUrl(url);
     }
   }, [dashboardUrl]);
+
+  // Inject CSS to hide the unwanted div
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe || !decodedUrl) return;
+
+    const injectCSS = () => {
+      try {
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (iframeDoc) {
+          // Create a style element to hide the unwanted div
+          const style = iframeDoc.createElement('style');
+          style.textContent = `
+            .emotion-pqcewr.e4w71dr4 {
+              display: none !important;
+            }
+          `;
+          iframeDoc.head.appendChild(style);
+          console.log('CSS injected to hide unwanted div');
+        }
+      } catch (error) {
+        // CORS restrictions - fallback to using global CSS
+        console.log('Cannot access iframe content, using global CSS');
+      }
+    };
+
+    iframe.addEventListener('load', injectCSS);
+
+    return () => {
+      iframe.removeEventListener('load', injectCSS);
+    };
+  }, [decodedUrl]);
 
   const handleBack = () => {
     navigate('/metabase');
@@ -65,6 +98,7 @@ export function DashboardViewPage() {
 
         {decodedUrl ? (
           <iframe
+            ref={iframeRef}
             src={decodedUrl}
             className="absolute inset-0 w-full h-full border-0"
             title="Metabase Dashboard"

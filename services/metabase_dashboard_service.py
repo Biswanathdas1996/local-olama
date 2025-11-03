@@ -110,10 +110,10 @@ class MetabaseDashboardService:
                                 "first_name": "Admin",
                                 "last_name": "User",
                                 "password": admin_password,
-                                "site_name": "LLM-365 Analytics"
+                                "site_name": "Olama Analytics"
                             },
                             "prefs": {
-                                "site_name": "LLM-365 Analytics",
+                                "site_name": "Olama Analytics",
                                 "allow_tracking": False
                             }
                         }
