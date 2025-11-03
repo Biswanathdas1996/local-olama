@@ -496,8 +496,8 @@ RECOMMENDATIONS:
             # Try to use default admin credentials
             # Users should change these after first setup
             default_credentials = [
-                {"username": "admin@LLM-365.local", "password": "LLM-365Admin2024!"},
-                {"username": "admin@example.com", "password": "LLM-365Admin2024!"},
+               {"username": "admin@olama.local", "password": "OlamaAdmin2024!"},
+                {"username": "admin@example.com", "password": "OlamaAdmin2024!"},
             ]
             
             connector = self._get_connector()
