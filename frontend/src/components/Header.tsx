@@ -1,8 +1,17 @@
-import { FiCpu, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
+import { FiCpu, FiCheckCircle, FiAlertCircle, FiUser, FiLogOut } from 'react-icons/fi';
 import { useHealth } from '../hooks/useHealth';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export function Header() {
   const { health } = useHealth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <header className="hidden lg:block bg-white border-b border-gray-200 shadow-sm sticky top-0 z-30">
@@ -25,6 +34,28 @@ export function Header() {
 
           {/* Status and Version Section */}
           <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-shrink-0">
+            {/* User Info */}
+            {user && (
+              <div className="flex items-center gap-2 px-2 sm:px-3 py-1 bg-gray-50 rounded-full">
+                <FiUser className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
+                <span className="text-[10px] sm:text-xs font-medium text-gray-700">
+                  {user.username}
+                  {user.is_admin && (
+                    <span className="ml-1 px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[8px] sm:text-[9px]">
+                      Admin
+                    </span>
+                  )}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className="p-1 hover:bg-gray-200 rounded transition-colors"
+                  title="Logout"
+                >
+                  <FiLogOut className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
+                </button>
+              </div>
+            )}
+            
             {health && (
               <div className={`flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 md:px-3 py-0.5 sm:py-1 md:py-1.5 rounded-full transition-colors ${
                 health.ollama_connected 

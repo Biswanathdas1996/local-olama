@@ -1,5 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { Layout } from './components/Layout';
+import { LoginPage } from './pages/LoginPage';
 import { ChatPage } from './pages/ChatPage';
 import { DocumentsPage } from './pages/DocumentsPage';
 import { ModelsPage } from './pages/ModelsPage';
@@ -11,35 +14,78 @@ import { LandingPage } from './pages/LandingPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { MetabasePage } from './pages/MetabasePage';
 import { DashboardViewPage } from './pages/DashboardViewPage';
+import { AdminPage } from './pages/AdminPage';
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* Landing page without Layout (standalone marketing page) */}
-        <Route path="/" element={<LandingPage />} />
-        
-        {/* Dashboard view without Layout (fullscreen) */}
-        <Route path="/dashboard/:dashboardUrl" element={<DashboardViewPage />} />
-        
-        {/* App routes with Layout */}
-        <Route path="/*" element={
-          <Layout>
-            <Routes>
-              <Route path="/chat" element={<ChatPage />} />
-              <Route path="/documents" element={<DocumentsPage />} />
-              <Route path="/models" element={<ModelsPage />} />
-              <Route path="/training" element={<TrainingPage />} />
-              <Route path="/templates" element={<TemplatesPage />} />
-              <Route path="/saved-templates" element={<SavedTemplatesPage />} />
-              <Route path="/analytics" element={<AnalyticsPage />} />
-              <Route path="/metabase" element={<MetabasePage />} />
-              <Route path="/connect" element={<ConnectPage />} />
-            </Routes>
-          </Layout>
-        } />
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          
+          {/* Dashboard view without Layout (fullscreen) */}
+          <Route path="/dashboard/:dashboardUrl" element={<DashboardViewPage />} />
+          
+          {/* Protected app routes with Layout */}
+          <Route path="/*" element={
+            <ProtectedRoute>
+              <Layout>
+                <Routes>
+                  <Route path="/chat" element={
+                    <ProtectedRoute resource="generate" action="write">
+                      <ChatPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/documents" element={
+                    <ProtectedRoute resource="documents" action="read">
+                      <DocumentsPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/models" element={
+                    <ProtectedRoute resource="models" action="read">
+                      <ModelsPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/training" element={
+                    <ProtectedRoute resource="training" action="read">
+                      <TrainingPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/templates" element={
+                    <ProtectedRoute resource="templates" action="read">
+                      <TemplatesPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/saved-templates" element={
+                    <ProtectedRoute resource="templates" action="read">
+                      <SavedTemplatesPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/analytics" element={
+                    <ProtectedRoute resource="analytics" action="read">
+                      <AnalyticsPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/metabase" element={
+                    <ProtectedRoute resource="metabase" action="read">
+                      <MetabasePage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin" element={
+                    <ProtectedRoute adminOnly>
+                      <AdminPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/connect" element={<ConnectPage />} />
+                </Routes>
+              </Layout>
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }
 

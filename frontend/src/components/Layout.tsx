@@ -1,25 +1,32 @@
 import { Link, useLocation } from 'react-router-dom';
-import { FiMessageSquare, FiFileText, FiCpu, FiMenu, FiHome, FiX, FiLayout, FiBookmark, FiZap, FiWifi, FiBarChart, FiDatabase } from 'react-icons/fi';
+import { FiMessageSquare, FiFileText, FiCpu, FiMenu, FiHome, FiX, FiLayout, FiBookmark, FiZap, FiWifi, FiBarChart, FiDatabase, FiSettings } from 'react-icons/fi';
 import { useState } from 'react';
 import { Header } from './Header';
+import { useAuth } from '../contexts/AuthContext';
 
 const navigation = [
   { name: 'Home', href: '/', icon: FiHome },
-  { name: 'Chat', href: '/chat', icon: FiMessageSquare },
-  { name: 'BYOD', href: '/documents', icon: FiFileText },
-  { name: 'Data Insights', href: '/metabase', icon: FiDatabase },
-  { name: 'Models', href: '/models', icon: FiCpu },
-  { name: 'Training', href: '/training', icon: FiZap },
-  { name: 'Templates', href: '/templates', icon: FiLayout },
-  { name: 'Saved Templates', href: '/saved-templates', icon: FiBookmark },
-  { name: 'Analytics', href: '/analytics', icon: FiBarChart },
- 
+  { name: 'Chat', href: '/chat', icon: FiMessageSquare, permission: 'generate.write' },
+  { name: 'BYOD', href: '/documents', icon: FiFileText, permission: 'documents.read' },
+  { name: 'Data Insights', href: '/metabase', icon: FiDatabase, permission: 'metabase.read' },
+  { name: 'Models', href: '/models', icon: FiCpu, permission: 'models.read' },
+  { name: 'Training', href: '/training', icon: FiZap, permission: 'training.read' },
+  { name: 'Templates', href: '/templates', icon: FiLayout, permission: 'templates.read' },
+  { name: 'Saved Templates', href: '/saved-templates', icon: FiBookmark, permission: 'templates.read' },
+  { name: 'Analytics', href: '/analytics', icon: FiBarChart, permission: 'analytics.read' },
   { name: 'Connect', href: '/connect', icon: FiWifi },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user, hasPermission } = useAuth();
+
+  // Filter navigation items based on permissions
+  const visibleNavigation = navigation.filter(item => {
+    if (!item.permission) return true;
+    return hasPermission(item.permission);
+  });
 
   return (
     <div id="layout-root" className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 tech-grid">
@@ -53,7 +60,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           {/* Navigation */}
           <nav className="flex-1 px-3 sm:px-4 py-4 sm:py-6 space-y-1">
-            {navigation.map((item) => {
+            {visibleNavigation.map((item) => {
               const isActive = location.pathname === item.href;
               const Icon = item.icon;
               
@@ -81,6 +88,30 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </Link>
               );
             })}
+            
+            {/* Admin Link - Only for admins */}
+            {user?.is_admin && (
+              <Link
+                to="/admin"
+                onClick={() => setSidebarOpen(false)}
+                className={`group flex items-center space-x-2.5 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-medium transition-all text-sm sm:text-base relative overflow-hidden ${
+                  location.pathname === '/admin'
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white tech-shadow'
+                    : 'text-slate-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700'
+                }`}
+              >
+                {location.pathname === '/admin' && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-pink-400/20 animate-pulse-slow" />
+                )}
+                <FiSettings className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 relative z-10 transition-transform group-hover:scale-110 ${
+                  location.pathname === '/admin' ? 'text-white drop-shadow-lg' : 'text-purple-600'
+                }`} />
+                <span className="truncate relative z-10">Admin Panel</span>
+                {location.pathname === '/admin' && (
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white/30 rounded-l-full" />
+                )}
+              </Link>
+            )}
           </nav>
 
         </aside>

@@ -76,7 +76,7 @@ class VectorStoreManager:
         Create a new collection (index).
         
         Args:
-            name: Collection name
+            name: Collection name (3-512 characters, alphanumeric + ._-, must start/end with alphanumeric)
             metadata: Optional collection metadata
             embedding_dimension: Expected embedding dimension
             
@@ -84,6 +84,16 @@ class VectorStoreManager:
             Success status
         """
         try:
+            # Validate collection name
+            import re
+            if not name or len(name) < 3 or len(name) > 512:
+                logger.error(f"Collection name must be 3-512 characters. Got: '{name}' ({len(name)} chars)")
+                raise ValueError(f"Collection name must be 3-512 characters. Got: '{name}' ({len(name)} chars)")
+            
+            if not re.match(r'^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$', name):
+                logger.error(f"Invalid collection name: '{name}'. Must contain only [a-zA-Z0-9._-] and start/end with alphanumeric")
+                raise ValueError(f"Invalid collection name: '{name}'. Must contain only [a-zA-Z0-9._-] and start/end with alphanumeric")
+            
             # Check if exists
             existing = self.client.list_collections()
             if any(col.name == name for col in existing):
@@ -104,8 +114,14 @@ class VectorStoreManager:
             logger.info(f"Created collection: {name}")
             return True
             
+        except ValueError:
+            # Re-raise validation errors
+            raise
         except Exception as e:
             logger.error(f"Failed to create collection '{name}': {e}")
+            # Include more context in the error message
+            if "Expected a name containing" in str(e) or "3-512 characters" in str(e):
+                raise ValueError(f"Invalid collection name '{name}': {e}")
             return False
 
     def get_collection(self, name: str):

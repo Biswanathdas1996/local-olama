@@ -3,8 +3,10 @@ API routes for model management.
 Provides endpoints for listing, downloading, and deleting Ollama models.
 """
 from typing import List, Dict, Any
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 
+from auth.models import User
+from auth.dependencies import get_current_user, ResourcePermissionChecker
 from schemas import (
     ModelsListResponse,
     ModelInfo,
@@ -32,9 +34,13 @@ router = APIRouter(prefix="/models", tags=["Models"])
     responses={
         200: {"description": "Download progress information"},
         404: {"description": "No download in progress for this model"}
-    }
+    },
+    dependencies=[Depends(ResourcePermissionChecker("models", "read"))]
 )
-async def get_download_progress(model_name: str) -> Dict[str, Any]:
+async def get_download_progress(
+    model_name: str,
+    current_user: User = Depends(get_current_user)
+) -> Dict[str, Any]:
     """
     Get download progress for a specific model.
     
@@ -72,9 +78,13 @@ async def get_download_progress(model_name: str) -> Dict[str, Any]:
     description="Clear the progress tracking for a completed or failed download.",
     responses={
         200: {"description": "Progress tracking cleared"}
-    }
+    },
+    dependencies=[Depends(ResourcePermissionChecker("models", "write"))]
 )
-async def clear_download_progress(model_name: str) -> Dict[str, str]:
+async def clear_download_progress(
+    model_name: str,
+    current_user: User = Depends(get_current_user)
+) -> Dict[str, str]:
     """
     Clear download progress tracking for a model.
     
@@ -112,9 +122,10 @@ async def clear_download_progress(model_name: str) -> Dict[str, str]:
             "model": ErrorResponse,
             "description": "Ollama service unavailable"
         }
-    }
+    },
+    dependencies=[Depends(ResourcePermissionChecker("models", "read"))]
 )
-async def list_models() -> ModelsListResponse:
+async def list_models(current_user: User = Depends(get_current_user)) -> ModelsListResponse:
     """
     List all locally available Ollama models.
     
@@ -172,9 +183,13 @@ async def list_models() -> ModelsListResponse:
             "model": ErrorResponse,
             "description": "Download failed"
         }
-    }
+    },
+    dependencies=[Depends(ResourcePermissionChecker("models", "write"))]
 )
-async def download_model(request: ModelDownloadRequest) -> ModelDownloadResponse:
+async def download_model(
+    request: ModelDownloadRequest,
+    current_user: User = Depends(get_current_user)
+) -> ModelDownloadResponse:
     """
     Download a new model using Ollama CLI.
     
@@ -229,9 +244,13 @@ async def download_model(request: ModelDownloadRequest) -> ModelDownloadResponse
             "model": ErrorResponse,
             "description": "Ollama service unavailable"
         }
-    }
+    },
+    dependencies=[Depends(ResourcePermissionChecker("models", "delete"))]
 )
-async def delete_model(model_name: str) -> ModelDeleteResponse:
+async def delete_model(
+    model_name: str,
+    current_user: User = Depends(get_current_user)
+) -> ModelDeleteResponse:
     """
     Delete a model from local storage.
     

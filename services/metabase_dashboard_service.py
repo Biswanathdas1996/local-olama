@@ -110,10 +110,10 @@ class MetabaseDashboardService:
                                 "first_name": "Admin",
                                 "last_name": "User",
                                 "password": admin_password,
-                                "site_name": "Olama Analytics"
+                                "site_name": "LLM-365 Analytics"
                             },
                             "prefs": {
-                                "site_name": "Olama Analytics",
+                                "site_name": "LLM-365 Analytics",
                                 "allow_tracking": False
                             }
                         }
@@ -496,8 +496,8 @@ RECOMMENDATIONS:
             # Try to use default admin credentials
             # Users should change these after first setup
             default_credentials = [
-                {"username": "admin@olama.local", "password": "OlamaAdmin2024!"},
-                {"username": "admin@example.com", "password": "OlamaAdmin2024!"},
+                {"username": "admin@LLM-365.local", "password": "LLM-365Admin2024!"},
+                {"username": "admin@example.com", "password": "LLM-365Admin2024!"},
             ]
             
             connector = self._get_connector()

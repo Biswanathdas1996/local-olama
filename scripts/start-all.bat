@@ -72,7 +72,7 @@ echo.
 
 REM 2. Start Backend Server
 echo [2/4] Starting backend server on port 8000...
-start "Backend Server" cmd /k "echo Backend Server && echo Port: 8000 && echo. && cd /d "%~dp0.." && call .venv\Scripts\activate.bat && python main.py"
+start "Backend Server" cmd /k "echo Backend Server && echo Port: 8000 && echo. && cd /d "%~dp0.." && .venv\Scripts\python.exe main.py"
 
 REM Wait for backend to start
 timeout /t 5 /nobreak >nul

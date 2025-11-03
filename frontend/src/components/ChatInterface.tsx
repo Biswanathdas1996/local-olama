@@ -73,10 +73,19 @@ export function ChatInterface() {
     const fetchIndices = async () => {
       setLoadingIndices(true);
       try {
+        console.log('[ChatInterface] Fetching indices...');
         const response = await apiService.listIndices();
+        console.log('[ChatInterface] Indices fetched successfully:', response.indices.length);
         setAvailableIndices(response.indices);
       } catch (err) {
-        console.error('Failed to fetch indices:', err);
+        console.error('[ChatInterface] Failed to fetch indices:', err);
+        console.error('[ChatInterface] Error details:', {
+          message: (err as any)?.message,
+          response: (err as any)?.response,
+          status: (err as any)?.response?.status
+        });
+        // Set empty array on error - don't block the UI
+        setAvailableIndices([]);
       } finally {
         setLoadingIndices(false);
       }

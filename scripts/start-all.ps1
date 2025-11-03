@@ -69,8 +69,7 @@ Write-Host 'Backend Server' -ForegroundColor Green
 Write-Host 'Port: 8000' -ForegroundColor Cyan
 Write-Host ''
 Set-Location '$PSScriptRoot'
-& '$PSScriptRoot\.venv\Scripts\Activate.ps1'
-python '$PSScriptRoot\main.py'
+& '$PSScriptRoot\.venv\Scripts\python.exe' '$PSScriptRoot\main.py'
 "@
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $backendScript
 

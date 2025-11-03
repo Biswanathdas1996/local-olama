@@ -53,6 +53,7 @@ from routes import models_router, generate_router
 from routes.ingestion_routes import router as ingestion_router
 from routes.analytics import router as analytics_router
 from routes.metabase_routes import router as metabase_router
+from routes.auth_routes import router as auth_router
 
 # Make training optional (requires additional dependencies)
 try:
@@ -87,6 +88,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         version=settings.app_version,
         ollama_url=settings.ollama_base_url
     )
+    
+    # Initialize authentication database
+    try:
+        from auth.database import init_db
+        init_db()
+        logger.info("authentication_database_initialized")
+    except Exception as e:
+        logger.warning(f"authentication_database_init_failed: {e}")
     
     # Verify Ollama connection
     ollama_service = get_ollama_service()
@@ -424,6 +433,7 @@ async def root():
 
 
 # Register routers
+app.include_router(auth_router)  # Authentication routes (no auth required)
 app.include_router(models_router)
 app.include_router(generate_router)
 app.include_router(ingestion_router)

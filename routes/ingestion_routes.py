@@ -15,13 +15,12 @@ from core import (
     KeywordExtractor,
     VectorStoreManager,
     HybridSearchEngine,
-    ImageProcessor,
 )
 from core.embedder import get_embedder
 from core.vector_store import get_vector_store
 from core.hybrid_search import get_hybrid_search
 from core.keyword_extractor import get_keyword_extractor
-from core.image_processor import get_image_processor
+from core.image_processor import ImageProcessor, get_image_processor
 from utils.config import get_settings
 from utils.logger import get_logger
 
@@ -186,6 +185,20 @@ async def ingest_document(
         if not file.filename:
             raise HTTPException(status_code=400, detail="No filename provided")
         
+        # Validate index name (must be 3-512 characters, alphanumeric + ._-)
+        import re
+        if not index_name or len(index_name) < 3 or len(index_name) > 512:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Index name must be between 3 and 512 characters. Got: '{index_name}' ({len(index_name)} characters)"
+            )
+        
+        if not re.match(r'^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$', index_name):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Index name must contain only alphanumeric characters, dots, underscores, and hyphens, and must start and end with an alphanumeric character. Got: '{index_name}'"
+            )
+        
         # Read file content
         file_content = await file.read()
         
@@ -337,12 +350,16 @@ async def ingest_document(
         vs = get_vs()
         
         # Create collection if doesn't exist
-        if index_name not in vs.list_collections():
-            vs.create_collection(
-                name=index_name,
-                metadata={'source': 'ingestion_api'},
-                embedding_dimension=embedder.dimension
-            )
+        try:
+            if index_name not in vs.list_collections():
+                vs.create_collection(
+                    name=index_name,
+                    metadata={'source': 'ingestion_api'},
+                    embedding_dimension=embedder.dimension
+                )
+        except ValueError as ve:
+            # Collection name validation error
+            raise HTTPException(status_code=400, detail=str(ve))
         
         # Prepare all texts and metadata for storage
         all_texts = chunk_texts.copy()

@@ -18,8 +18,8 @@ export interface SavedTemplate {
   updatedAt: string;
 }
 
-const STORAGE_KEY = 'olama_templates';
-const ACTIVE_TEMPLATE_KEY = 'olama_active_template';
+const STORAGE_KEY = 'LLM-365_templates';
+const ACTIVE_TEMPLATE_KEY = 'LLM-365_active_template';
 
 class TemplateStorage {
   // Save a template to localStorage

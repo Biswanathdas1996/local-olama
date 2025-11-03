@@ -28,6 +28,7 @@ import type {
 
 class ApiService {
   private client: AxiosInstance;
+  private skipAuthClear: boolean = false;
 
   constructor() {
     this.client = axios.create({
@@ -38,10 +39,56 @@ class ApiService {
       timeout: 300000, // 5 minutes for large model operations
     });
 
+    // Add request interceptor to include auth token
+    this.client.interceptors.request.use(
+      (config) => {
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+
     // Add response interceptor for error handling
     this.client.interceptors.response.use(
       (response) => response,
       (error) => {
+        console.log('[ApiService] Response error:', {
+          status: error.response?.status,
+          url: error.config?.url,
+          skipAuthClear: this.skipAuthClear
+        });
+        
+        if (error.response?.status === 401 && !this.skipAuthClear) {
+          console.log('[ApiService] 401 Unauthorized - checking if should clear auth');
+          
+          // Don't auto-logout if we're already on the login page
+          const currentPath = window.location.pathname;
+          if (currentPath === '/login') {
+            console.log('[ApiService] Already on login page - not clearing auth');
+          } else {
+            // Check if token exists before clearing
+            const hasToken = localStorage.getItem('auth_token');
+            const hasUser = localStorage.getItem('auth_user');
+            
+            console.log('[ApiService] Current state:', { hasToken: !!hasToken, hasUser: !!hasUser, currentPath });
+            
+            // Only clear and redirect if NOT on /auth/me endpoint (which AuthContext handles)
+            if (error.config?.url?.includes('/auth/me')) {
+              console.log('[ApiService] 401 on /auth/me - AuthContext will handle this');
+            } else {
+              console.log('[ApiService] 401 Unauthorized - clearing auth and redirecting');
+              localStorage.removeItem('auth_token');
+              localStorage.removeItem('auth_user');
+              window.location.href = '/login';
+            }
+          }
+        } else if (error.response?.status === 401 && this.skipAuthClear) {
+          console.log('[ApiService] 401 Unauthorized - but skipAuthClear is true, not clearing');
+        }
+        
         if (error.response?.data) {
           const errorData = error.response.data as ErrorResponse;
           throw new Error(errorData.message || 'An error occurred');
@@ -49,6 +96,32 @@ class ApiService {
         throw error;
       }
     );
+  }
+
+  // Method to disable auto-logout on 401 (for auth verification)
+  setSkipAuthClear(skip: boolean): void {
+    this.skipAuthClear = skip;
+  }
+
+  // Generic API methods for auth service
+  async get<T>(url: string, params?: any): Promise<T> {
+    const response = await this.client.get<T>(url, { params });
+    return response.data;
+  }
+
+  async post<T>(url: string, data?: any): Promise<T> {
+    const response = await this.client.post<T>(url, data);
+    return response.data;
+  }
+
+  async put<T>(url: string, data?: any): Promise<T> {
+    const response = await this.client.put<T>(url, data);
+    return response.data;
+  }
+
+  async delete<T>(url: string): Promise<T> {
+    const response = await this.client.delete<T>(url);
+    return response.data;
   }
 
   // Health Check
@@ -288,3 +361,4 @@ class ApiService {
 }
 
 export const apiService = new ApiService();
+export default apiService;
