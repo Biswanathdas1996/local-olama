@@ -5,6 +5,7 @@ import type { IndexInfo } from '../types/api';
 import { HtmlPreviewModal } from '../components/HtmlPreviewModal';
 import { templateStorage, type SavedTemplate, type TemplateBox } from '../utils/templateStorage';
 import { useNavigate } from 'react-router-dom';
+import { RichTextEditor } from '../components/RichTextEditor';
 
 const sizeClasses = {
   small: 'col-span-1 row-span-1 min-h-[200px]',
@@ -838,107 +839,115 @@ export function TemplatesPage() {
                 key={box.id}
                 className={`${sizeClasses[box.size]} bg-white rounded-lg border-2 ${
                   box.isGenerating ? 'border-blue-400 shadow-lg shadow-blue-100' : 'border-gray-200 hover:border-blue-300'
-                } transition-all p-3 flex flex-col group hover:shadow-xl`}
+                } transition-all p-3 flex flex-col group hover:shadow-xl relative`}
               >
-                {/* Compact Box Header */}
-                <div className="flex items-center justify-between mb-2 pb-2 border-b border-gray-100">
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={box.size}
-                      onChange={(e) => updateBoxSize(box.id, e.target.value as any)}
-                      className="text-xs px-2 py-1 border border-gray-200 rounded bg-gray-50 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
-                    >
-                      <option value="small">S</option>
-                      <option value="medium">M</option>
-                      <option value="large">L</option>
-                      <option value="xlarge">XL</option>
-                    </select>
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded ${
-                      box.isGenerating ? 'bg-blue-100 text-blue-700' :
-                      box.response ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                    }`}>
-                      {box.isGenerating ? 'Generating...' : box.response ? 'Done' : 'Empty'}
-                    </span>
-                  </div>
+                {/* Hover Controls Overlay - Only show on hover or when editing/no response */}
+                <div className={`${box.response && editingBoxId !== box.id ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'} absolute top-2 right-2 flex items-center gap-1 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-1 transition-all duration-200 z-10`}>
+                  <select
+                    value={box.size}
+                    onChange={(e) => updateBoxSize(box.id, e.target.value as any)}
+                    className="text-xs px-2 py-1 border border-gray-200 rounded bg-white focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
+                    title="Box Size"
+                  >
+                    <option value="small">S</option>
+                    <option value="medium">M</option>
+                    <option value="large">L</option>
+                    <option value="xlarge">XL</option>
+                  </select>
                   
-                  <div className="flex items-center gap-1">
-                    {box.response && (
-                      <>
-                        <button
-                          onClick={() => setEditingBoxId(editingBoxId === box.id ? null : box.id)}
-                          className={`p-1 ${editingBoxId === box.id ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:bg-gray-100 hover:text-blue-600'} rounded transition-all`}
-                          title={editingBoxId === box.id ? "View" : "Edit"}
-                        >
-                          {editingBoxId === box.id ? <FiEye className="w-3.5 h-3.5" /> : <FiEdit2 className="w-3.5 h-3.5" />}
-                        </button>
-                        <button
-                          onClick={() => openHtmlPreview(box.id)}
-                          className="p-1 text-gray-400 hover:bg-purple-100 hover:text-purple-600 rounded transition-all"
-                          title="Preview"
-                        >
-                          <FiEye className="w-3.5 h-3.5" />
-                        </button>
-                      </>
+                  {box.response && (
+                    <>
+                      <button
+                        onClick={() => setEditingBoxId(editingBoxId === box.id ? null : box.id)}
+                        className={`p-1.5 ${editingBoxId === box.id ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100 hover:text-blue-600'} rounded transition-all`}
+                        title={editingBoxId === box.id ? "View Mode" : "Edit Prompt"}
+                      >
+                        {editingBoxId === box.id ? <FiEye className="w-4 h-4" /> : <FiEdit2 className="w-4 h-4" />}
+                      </button>
+                      <button
+                        onClick={() => openHtmlPreview(box.id)}
+                        className="p-1.5 text-gray-500 hover:bg-purple-100 hover:text-purple-600 rounded transition-all"
+                        title="Preview Output"
+                      >
+                        <FiEye className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
+                  <button
+                    onClick={() => generateForBox(box.id)}
+                    disabled={box.isGenerating || !box.prompt.trim()}
+                    className="p-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Generate Content"
+                  >
+                    {box.isGenerating ? (
+                      <FiLoader className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <FiPlay className="w-4 h-4" />
                     )}
-                    <button
-                      onClick={() => generateForBox(box.id)}
-                      disabled={box.isGenerating || !box.prompt.trim()}
-                      className="p-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                      title="Generate"
-                    >
-                      {box.isGenerating ? (
-                        <FiLoader className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <FiPlay className="w-3.5 h-3.5" />
-                      )}
-                    </button>
-                    <button
-                      onClick={() => removeBox(box.id)}
-                      className="p-1 text-gray-400 hover:bg-red-100 hover:text-red-600 rounded transition-all"
-                      title="Remove"
-                    >
-                      <FiTrash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                  </button>
+                  <button
+                    onClick={() => removeBox(box.id)}
+                    className="p-1.5 text-gray-500 hover:bg-red-100 hover:text-red-600 rounded transition-all"
+                    title="Delete Box"
+                  >
+                    <FiTrash2 className="w-4 h-4" />
+                  </button>
                 </div>
 
-                {/* Prompt Input - Compact */}
-                <div className="mb-2">
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">
-                    Prompt
-                  </label>
-                  <textarea
-                    value={box.prompt}
-                    onChange={(e) => updateBoxPrompt(box.id, e.target.value)}
-                    placeholder="Enter prompt..."
-                    className="w-full px-2 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-none text-xs bg-gray-50 transition-all"
-                    rows={compactMode ? 2 : 3}
-                  />
+                {/* Status Badge - Only show on hover or when relevant */}
+                <div className={`${box.response && !box.isGenerating && editingBoxId !== box.id ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'} absolute top-2 left-2 transition-all duration-200 z-10`}>
+                  <span className={`text-xs font-semibold px-2 py-1 rounded shadow-sm ${
+                    box.isGenerating ? 'bg-blue-100 text-blue-700' :
+                    box.response ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {box.isGenerating ? 'Generating...' : box.response ? 'Done' : 'Empty'}
+                  </span>
                 </div>
 
-                {/* Response Display - Compact */}
-                <div className="flex-1 flex flex-col min-h-0">
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">
-                    Response
-                  </label>
-                  {editingBoxId === box.id ? (
+                {/* Prompt Input - Only show when editing or no response */}
+                {(!box.response || editingBoxId === box.id) && (
+                  <div className="mb-2 pt-1">
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                      Prompt
+                    </label>
                     <textarea
-                      value={box.response}
-                      onChange={(e) => updateBoxResponse(box.id, e.target.value)}
-                      className="flex-1 w-full border border-gray-200 rounded-lg p-2 text-xs text-gray-800 font-mono resize-none focus:ring-2 focus:ring-blue-400 focus:border-transparent bg-white"
-                      placeholder="Response will appear here..."
+                      value={box.prompt}
+                      onChange={(e) => updateBoxPrompt(box.id, e.target.value)}
+                      placeholder="Enter prompt..."
+                      className="w-full px-2 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-none text-xs bg-gray-50 transition-all"
+                      rows={compactMode ? 2 : 3}
                     />
+                  </div>
+                )}
+
+                {/* Response Display - Takes full space when prompt is hidden */}
+                <div className={`flex-1 flex flex-col min-h-0 ${!box.response && editingBoxId !== box.id ? '' : box.response && editingBoxId !== box.id ? 'pt-0' : ''}`}>
+                  {/* Only show label when editing or no response */}
+                  {(editingBoxId === box.id || !box.response) && (
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                      {box.response && editingBoxId === box.id ? 'Response' : 'Output'}
+                    </label>
+                  )}
+                  {editingBoxId === box.id ? (
+                    <div className="flex-1 flex flex-col min-h-0">
+                      <RichTextEditor
+                        value={box.response}
+                        onChange={(content: string) => updateBoxResponse(box.id, content)}
+                        className="flex-1 bg-white rounded-lg border border-gray-200 overflow-hidden"
+                        placeholder="Response will appear here..."
+                      />
+                    </div>
                   ) : (
-                    <div className="flex-1 bg-white border border-gray-200 rounded-lg p-2 overflow-y-auto text-xs text-gray-800 whitespace-pre-wrap">
+                    <div className={`flex-1 bg-white border border-gray-200 rounded-lg p-3 overflow-y-auto text-sm text-gray-800 ${box.response ? 'border-transparent' : ''}`}>
                       {box.isGenerating ? (
                         <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                          <FiLoader className="w-6 h-6 animate-spin mb-2" />
-                          <span className="text-xs">Generating...</span>
+                          <FiLoader className="w-8 h-8 animate-spin mb-2" />
+                          <span className="text-xs">Generating content...</span>
                         </div>
                       ) : box.response ? (
-                        <div className="leading-relaxed">{box.response}</div>
+                        <div className="leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: box.response }} />
                       ) : (
-                        <span className="text-gray-400 italic text-xs">No response yet</span>
+                        <span className="text-gray-400 italic text-xs">No response yet. Enter a prompt and click generate.</span>
                       )}
                     </div>
                   )}

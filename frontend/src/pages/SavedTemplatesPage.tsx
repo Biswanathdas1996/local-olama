@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { FiTrash2, FiEdit2, FiDownload, FiUpload, FiSearch, FiGrid, FiList, FiClock, FiBox, FiX, FiFileText, FiPlay, FiCopy, FiEye } from 'react-icons/fi';
 import { templateStorage, type SavedTemplate } from '../utils/templateStorage';
 import { useNavigate } from 'react-router-dom';
+import { RichTextEditor } from '../components/RichTextEditor';
 
 type ViewMode = 'grid' | 'list';
 type SortBy = 'updated' | 'created' | 'name' | 'boxes';
@@ -14,6 +15,8 @@ export function SavedTemplatesPage() {
   const [sortBy, setSortBy] = useState<SortBy>('updated');
   const [selectedTemplate, setSelectedTemplate] = useState<SavedTemplate | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [editingBoxId, setEditingBoxId] = useState<string | null>(null);
+  const [previewBoxes, setPreviewBoxes] = useState<SavedTemplate['boxes']>([]);
 
   useEffect(() => {
     loadTemplates();
@@ -279,6 +282,8 @@ export function SavedTemplatesPage() {
                     <button
                       onClick={() => {
                         setSelectedTemplate(template);
+                        setPreviewBoxes(template.boxes);
+                        setEditingBoxId(null);
                         setShowPreview(true);
                       }}
                       className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
@@ -359,6 +364,8 @@ export function SavedTemplatesPage() {
                     <button
                       onClick={() => {
                         setSelectedTemplate(template);
+                        setPreviewBoxes(template.boxes);
+                        setEditingBoxId(null);
                         setShowPreview(true);
                       }}
                       className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
@@ -397,57 +404,118 @@ export function SavedTemplatesPage() {
 
       {/* Preview Modal */}
       {showPreview && selectedTemplate && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fadeIn">
-          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col animate-scaleUp">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fadeIn" onClick={() => setShowPreview(false)}>
+          <div className="bg-white rounded-xl shadow-2xl max-w-7xl w-full max-h-[90vh] flex flex-col animate-scaleUp" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">{selectedTemplate.name}</h2>
                 <p className="text-sm text-gray-500 mt-1">
                   {selectedTemplate.boxes.length} boxes • {selectedTemplate.model}
                 </p>
               </div>
-              <button
-                onClick={() => setShowPreview(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <FiX className="w-5 h-5 text-gray-600" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    loadTemplateInEditor(selectedTemplate);
+                    setShowPreview(false);
+                  }}
+                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all flex items-center gap-2 font-medium text-sm"
+                >
+                  <FiEdit2 className="w-4 h-4" />
+                  Edit Template
+                </button>
+                <button
+                  onClick={() => setShowPreview(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <FiX className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4">
-              <div className="space-y-4">
-                {selectedTemplate.boxes.map((box, index) => (
-                  <div key={box.id} className="bg-gray-50 rounded-lg border border-gray-200 p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-semibold">
-                        Box {index + 1}
-                      </span>
-                      <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
-                        {box.size.toUpperCase()}
-                      </span>
-                    </div>
-                    
-                    <div className="mb-3">
-                      <label className="block text-xs font-semibold text-gray-700 mb-1">
-                        Prompt
-                      </label>
-                      <div className="bg-white border border-gray-200 rounded-lg p-3 text-sm text-gray-800">
-                        {box.prompt || <span className="text-gray-400 italic">No prompt</span>}
+            <div className="flex-1 overflow-y-auto p-4 bg-gradient-to-br from-gray-50 to-purple-50/30">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-auto">
+                {selectedTemplate.boxes.map((box, index) => {
+                  const currentBox = previewBoxes.find(b => b.id === box.id) || box;
+                  return (
+                    <div
+                      key={box.id}
+                      className={`${
+                        box.size === 'small' ? 'col-span-1 row-span-1' :
+                        box.size === 'medium' ? 'col-span-1 md:col-span-2 row-span-1' :
+                        box.size === 'large' ? 'col-span-1 md:col-span-2 row-span-2' :
+                        'col-span-1 md:col-span-2 lg:col-span-3 row-span-2'
+                      } bg-white rounded-lg border-2 border-gray-200 hover:border-purple-300 transition-all p-4 flex flex-col group hover:shadow-xl relative min-h-[250px]`}
+                    >
+                      {/* Hover Controls Overlay */}
+                      <div className={`${currentBox.response && editingBoxId !== box.id ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'} absolute top-2 right-2 flex items-center gap-1 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-1 transition-all duration-200 z-10`}>
+                        <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-semibold">
+                          Box {index + 1}
+                        </span>
+                        <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
+                          {box.size.toUpperCase()}
+                        </span>
+                        {currentBox.response && (
+                          <button
+                            onClick={() => setEditingBoxId(editingBoxId === box.id ? null : box.id)}
+                            className={`p-1.5 ${editingBoxId === box.id ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100 hover:text-blue-600'} rounded transition-all`}
+                            title={editingBoxId === box.id ? "View Mode" : "Edit Response"}
+                          >
+                            {editingBoxId === box.id ? <FiEye className="w-4 h-4" /> : <FiEdit2 className="w-4 h-4" />}
+                          </button>
+                        )}
                       </div>
-                    </div>
 
-                    {box.response && (
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
-                          Response
-                        </label>
-                        <div className="bg-white border border-gray-200 rounded-lg p-3 text-sm text-gray-800 max-h-40 overflow-y-auto">
-                          {box.response}
+                      {/* Prompt - Only show when editing or no response */}
+                      {(!currentBox.response || editingBoxId === box.id) && (
+                        <div className="mb-3 pt-1">
+                          <label className="block text-xs font-semibold text-gray-700 mb-1">
+                            Prompt
+                          </label>
+                          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-800">
+                            {box.prompt || <span className="text-gray-400 italic">No prompt</span>}
+                          </div>
                         </div>
+                      )}
+
+                      {/* Response Display */}
+                      <div className={`flex-1 flex flex-col min-h-0 ${!currentBox.response && editingBoxId !== box.id ? '' : currentBox.response && editingBoxId !== box.id ? 'pt-0' : ''}`}>
+                        {(editingBoxId === box.id || !currentBox.response) && (
+                          <label className="block text-xs font-semibold text-gray-700 mb-1">
+                            {currentBox.response && editingBoxId === box.id ? 'Response' : 'Output'}
+                          </label>
+                        )}
+                        {editingBoxId === box.id ? (
+                          <div className="flex-1 flex flex-col min-h-0">
+                            <RichTextEditor
+                              value={currentBox.response}
+                              onChange={(content: string) => {
+                                setPreviewBoxes(prev => {
+                                  const exists = prev.find(b => b.id === box.id);
+                                  if (exists) {
+                                    return prev.map(b => b.id === box.id ? { ...b, response: content } : b);
+                                  } else {
+                                    return [...prev, { ...box, response: content }];
+                                  }
+                                });
+                              }}
+                              className="flex-1 bg-white rounded-lg border border-gray-200 overflow-hidden"
+                              placeholder="Response will appear here..."
+                            />
+                          </div>
+                        ) : (
+                          <div className={`flex-1 bg-white border border-gray-200 rounded-lg p-3 overflow-y-auto text-sm text-gray-800 ${currentBox.response ? 'border-transparent' : ''}`}>
+                            {currentBox.response ? (
+                              <div className="leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: currentBox.response }} />
+                            ) : (
+                              <span className="text-gray-400 italic text-xs">No response generated</span>
+                            )}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                ))}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -466,7 +534,7 @@ export function SavedTemplatesPage() {
                 className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all flex items-center gap-2 font-medium"
               >
                 <FiEdit2 className="w-4 h-4" />
-                Edit Template
+                Edit in Editor
               </button>
             </div>
           </div>
