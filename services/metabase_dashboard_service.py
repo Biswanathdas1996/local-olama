@@ -432,9 +432,9 @@ Column Information:
         for insight in existing_insights[:5]:
             prompt += f"\n- {insight.get('title', '')}: {insight.get('description', '')}"
         
-        if sample_data and len(sample_data.get('data', [])) > 0:
+        if sample_data and len(sample_data.get('sample_rows', [])) > 0:
             prompt += f"\n\nSample Data (first 3 rows):\n"
-            for row in sample_data['data'][:3]:
+            for row in sample_data['sample_rows'][:3]:
                 prompt += f"{row}\n"
         
         prompt += """

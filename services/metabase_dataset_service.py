@@ -578,7 +578,7 @@ class MetabaseDatasetService:
                     'dataset_id': dataset_id,
                     'table_name': table_name,
                     'columns': df.columns.tolist(),
-                    'data': df.to_dict(orient='records'),
+                    'sample_rows': df.to_dict(orient='records'),
                     'sample_size': len(df),
                     'total_rows': dataset['row_count']
                 }

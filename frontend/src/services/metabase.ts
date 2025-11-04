@@ -100,16 +100,46 @@ class MetabaseService {
    * Get dataset preview (sample data)
    */
   async getDatasetPreview(datasetId: number, limit: number = 10): Promise<DatasetPreview> {
-    const response = await apiClient.get(`/metabase/datasets/${datasetId}/preview?limit=${limit}`);
-    return response.data;
+    try {
+      const response = await apiClient.get(`/metabase/datasets/${datasetId}/preview?limit=${limit}`);
+      
+      // Validate response structure
+      if (!response.data || !response.data.columns || !response.data.sample_rows) {
+        throw new Error('Invalid preview data structure received from server');
+      }
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('Failed to get dataset preview:', error);
+      throw error;
+    }
   }
 
   /**
    * Generate AI insights for a dataset
    */
   async generateInsights(datasetId: number): Promise<AIInsight> {
-    const response = await apiClient.post(`/metabase/datasets/${datasetId}/generate-insights`);
-    return response.data;
+    try {
+      const response = await apiClient.post(`/metabase/datasets/${datasetId}/generate-insights`);
+      
+      // Validate response structure
+      if (!response.data || !response.data.summary) {
+        throw new Error('Invalid insights data structure received from server');
+      }
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('Failed to generate insights:', error);
+      
+      // Provide more helpful error messages
+      if (error.response?.status === 500) {
+        throw new Error('Server error while generating insights. Make sure Ollama is running.');
+      } else if (error.response?.status === 404) {
+        throw new Error('Dataset not found');
+      }
+      
+      throw error;
+    }
   }
 
   /**

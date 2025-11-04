@@ -103,25 +103,47 @@ export function MetabasePage() {
   const handleViewPreview = async (dataset: Dataset) => {
     try {
       setSelectedDataset(dataset);
+      setShowPreview(true); // Show modal first with loading state
+      setPreview(null); // Clear previous preview
+      
       const previewData = await metabaseService.getDatasetPreview(dataset.id, 10);
+      
+      // Validate response structure
+      if (!previewData || !previewData.columns || !previewData.sample_rows) {
+        throw new Error('Invalid preview data structure');
+      }
+      
       setPreview(previewData);
-      setShowPreview(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load preview:', error);
-      alert('Failed to load preview');
+      setShowPreview(false); // Close modal on error
+      alert(`Failed to load preview: ${error.response?.data?.detail || error.message || 'Unknown error'}`);
     }
   };
 
   const handleGenerateInsights = async (dataset: Dataset) => {
+    if (!confirm('Generate AI-powered insights? This may take a moment using your local LLM.')) {
+      return;
+    }
+
     try {
       setGeneratingInsights(true);
       setSelectedDataset(dataset);
+      setInsights(null); // Clear previous insights
+      
       const insightData = await metabaseService.generateInsights(dataset.id);
+      
+      // Validate response structure
+      if (!insightData || !insightData.summary) {
+        throw new Error('Invalid insights data structure');
+      }
+      
       setInsights(insightData);
       setShowInsights(true);
     } catch (error: any) {
       console.error('Failed to generate insights:', error);
-      alert(`Failed to generate insights: ${error.response?.data?.detail || error.message}`);
+      const errorMessage = error.response?.data?.detail || error.message || 'Unknown error';
+      alert(`Failed to generate insights: ${errorMessage}\n\nMake sure your local LLM (Ollama) is running.`);
     } finally {
       setGeneratingInsights(false);
     }
@@ -313,8 +335,17 @@ export function MetabasePage() {
                       className="flex-1 flex items-center justify-center space-x-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
                       title="AI Insights"
                     >
-                      <FiZap className="w-3.5 h-3.5" />
-                      <span>AI</span>
+                      {generatingInsights ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <span>Generating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <FiZap className="w-3.5 h-3.5" />
+                          <span>AI</span>
+                        </>
+                      )}
                     </button>
                     <button
                       onClick={() => handleCreateDashboard(dataset)}
@@ -340,7 +371,7 @@ export function MetabasePage() {
         )}
 
         {/* Preview Modal */}
-        {showPreview && preview && selectedDataset && (
+        {showPreview && selectedDataset && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
             <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
               <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600">
@@ -349,7 +380,9 @@ export function MetabasePage() {
                     <FiEye className="w-5 h-5" />
                     {selectedDataset.original_filename}
                   </h2>
-                  <p className="text-xs text-blue-100">Preview: {preview.sample_rows.length} of {preview.total_rows} rows</p>
+                  {preview && (
+                    <p className="text-xs text-blue-100">Preview: {preview.sample_rows.length} of {preview.total_rows} rows</p>
+                  )}
                 </div>
                 <button
                   onClick={() => setShowPreview(false)}
@@ -359,37 +392,46 @@ export function MetabasePage() {
                 </button>
               </div>
               <div className="p-5 overflow-auto max-h-[75vh]">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50 sticky top-0">
-                      <tr>
-                        {preview.columns.map((column, idx) => (
-                          <th key={idx} className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                            {column}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-100">
-                      {preview.sample_rows.map((row, rowIdx) => (
-                        <tr key={rowIdx} className="hover:bg-blue-50/50 transition-colors">
-                          {preview.columns.map((column, colIdx) => (
-                            <td key={colIdx} className="px-4 py-2 whitespace-nowrap text-xs text-gray-900">
-                              {String(row[column] ?? '')}
-                            </td>
+                {!preview ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+                      <p className="text-gray-600 font-medium">Loading preview...</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50 sticky top-0">
+                        <tr>
+                          {preview.columns.map((column, idx) => (
+                            <th key={idx} className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                              {column}
+                            </th>
                           ))}
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-100">
+                        {preview.sample_rows.map((row, rowIdx) => (
+                          <tr key={rowIdx} className="hover:bg-blue-50/50 transition-colors">
+                            {preview.columns.map((column, colIdx) => (
+                              <td key={colIdx} className="px-4 py-2 whitespace-nowrap text-xs text-gray-900">
+                                {row[column] !== null && row[column] !== undefined ? String(row[column]) : '-'}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         )}
 
         {/* Insights Modal */}
-        {showInsights && insights && selectedDataset && (
+        {showInsights && selectedDataset && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
             <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
               <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-purple-600 to-pink-600">
@@ -408,65 +450,83 @@ export function MetabasePage() {
                 </button>
               </div>
               <div className="p-5 overflow-auto max-h-[75vh] space-y-5">
-                {/* Summary */}
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
-                  <h3 className="text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
-                    <FiFileText className="w-4 h-4 text-blue-600" />
-                    Summary
-                  </h3>
-                  <p className="text-sm text-gray-700 leading-relaxed">{insights.summary}</p>
-                </div>
-
-                {/* Key Findings */}
-                <div className="bg-white rounded-xl p-4 border border-gray-200">
-                  <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-                    <FiCheckCircle className="w-4 h-4 text-green-600" />
-                    Key Findings
-                  </h3>
-                  <ul className="space-y-2">
-                    {insights.key_findings.map((finding, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-sm">
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 flex-shrink-0"></div>
-                        <span className="text-gray-700">{finding}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Data Quality */}
-                <div className="bg-white rounded-xl p-4 border border-gray-200">
-                  <h3 className="text-sm font-bold text-gray-900 mb-3">Data Quality Metrics</h3>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 text-center border border-blue-200">
-                      <p className="text-xs text-gray-600 mb-1">Completeness</p>
-                      <p className="text-xl font-bold text-blue-700">{(insights.data_quality.completeness * 100).toFixed(0)}%</p>
-                    </div>
-                    <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 text-center border border-green-200">
-                      <p className="text-xs text-gray-600 mb-1">Consistency</p>
-                      <p className="text-xl font-bold text-green-700">{(insights.data_quality.consistency * 100).toFixed(0)}%</p>
-                    </div>
-                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-3 text-center border border-purple-200">
-                      <p className="text-xs text-gray-600 mb-1">Accuracy</p>
-                      <p className="text-xl font-bold text-purple-700">{(insights.data_quality.accuracy * 100).toFixed(0)}%</p>
+                {!insights ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
+                      <p className="text-gray-600 font-medium">Generating AI insights...</p>
+                      <p className="text-sm text-gray-500 mt-2">This may take a moment</p>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <>
+                    {/* Summary */}
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
+                      <h3 className="text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
+                        <FiFileText className="w-4 h-4 text-blue-600" />
+                        Summary
+                      </h3>
+                      <p className="text-sm text-gray-700 leading-relaxed">{insights.summary}</p>
+                    </div>
 
-                {/* Recommendations */}
-                <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200">
-                  <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-                    <FiTrendingUp className="w-4 h-4 text-orange-600" />
-                    Recommendations
-                  </h3>
-                  <ul className="space-y-2">
-                    {insights.recommendations.map((rec, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-sm">
-                        <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-1.5 flex-shrink-0"></div>
-                        <span className="text-gray-700">{rec}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                    {/* Key Findings */}
+                    {insights.key_findings && insights.key_findings.length > 0 && (
+                      <div className="bg-white rounded-xl p-4 border border-gray-200">
+                        <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                          <FiCheckCircle className="w-4 h-4 text-green-600" />
+                          Key Findings
+                        </h3>
+                        <ul className="space-y-2">
+                          {insights.key_findings.map((finding, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-sm">
+                              <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 flex-shrink-0"></div>
+                              <span className="text-gray-700">{finding}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Data Quality */}
+                    {insights.data_quality && (
+                      <div className="bg-white rounded-xl p-4 border border-gray-200">
+                        <h3 className="text-sm font-bold text-gray-900 mb-3">Data Quality Metrics</h3>
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 text-center border border-blue-200">
+                            <p className="text-xs text-gray-600 mb-1">Completeness</p>
+                            <p className="text-xl font-bold text-blue-700">{(insights.data_quality.completeness * 100).toFixed(0)}%</p>
+                          </div>
+                          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 text-center border border-green-200">
+                            <p className="text-xs text-gray-600 mb-1">Consistency</p>
+                            <p className="text-xl font-bold text-green-700">{(insights.data_quality.consistency * 100).toFixed(0)}%</p>
+                          </div>
+                          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-3 text-center border border-purple-200">
+                            <p className="text-xs text-gray-600 mb-1">Accuracy</p>
+                            <p className="text-xl font-bold text-purple-700">{(insights.data_quality.accuracy * 100).toFixed(0)}%</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Recommendations */}
+                    {insights.recommendations && insights.recommendations.length > 0 && (
+                      <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200">
+                        <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                          <FiTrendingUp className="w-4 h-4 text-orange-600" />
+                          Recommendations
+                        </h3>
+                        <ul className="space-y-2">
+                          {insights.recommendations.map((rec, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-sm">
+                              <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-1.5 flex-shrink-0"></div>
+                              <span className="text-gray-700">{rec}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           </div>
