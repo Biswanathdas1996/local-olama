@@ -502,9 +502,13 @@ async def proxy_metabase(path: str, request: Request):
     Comprehensive proxy endpoint to forward all requests to Metabase and remove X-Frame-Options header.
     This allows embedding Metabase dashboards in iframes.
     Handles all HTTP methods and proxies all resources (HTML, CSS, JS, images, API calls).
+    Also handles Metabase session authentication to prevent 401 errors in embedded dashboards.
     """
     import aiohttp
-    from fastapi.responses import StreamingResponse, Response
+    from fastapi.responses import Response
+    
+    # Get Metabase session token from dashboard service
+    dashboard_service = get_metabase_dashboard_service()
     
     # Try multiple URLs for better offline compatibility
     base_urls = ["http://127.0.0.1:3001", "http://localhost:3001", "http://[::1]:3001"]
@@ -512,6 +516,8 @@ async def proxy_metabase(path: str, request: Request):
     # Get query parameters
     query_string = str(request.url.query)
     query_suffix = f"?{query_string}" if query_string else ""
+    
+    logger.debug(f"Metabase proxy request: path={path}, query={query_string}")
     
     last_error = None
     
@@ -530,6 +536,12 @@ async def proxy_metabase(path: str, request: Request):
                     for key, value in request.headers.items() 
                     if key.lower() not in ['host']
                 }
+                
+                # Add Metabase session token if available to prevent 401 errors
+                if dashboard_service.session_token:
+                    headers['X-Metabase-Session'] = dashboard_service.session_token
+                    headers['Cookie'] = f"metabase.SESSION={dashboard_service.session_token}"
+                    logger.debug(f"Added Metabase session token to proxy request")
                 
                 # Get request body if present
                 body = None
@@ -562,6 +574,16 @@ async def proxy_metabase(path: str, request: Request):
                     
                     # Read content (aiohttp automatically decompresses)
                     content = await response.read()
+                    
+                    # Log 401s at debug level - these are expected for unauthenticated Metabase API calls
+                    if response.status == 401:
+                        logger.debug(f"Metabase proxy: 401 Unauthenticated for path={path} (expected for embedded dashboards)")
+                    elif response.status >= 400:
+                        logger.warning(f"Metabase proxy: HTTP {response.status} for path={path}")
+                    
+                    # Set session cookie in response if we have a token (for browser to use in future requests)
+                    if dashboard_service.session_token and response.status != 401:
+                        response_headers['Set-Cookie'] = f"metabase.SESSION={dashboard_service.session_token}; Path=/; HttpOnly; SameSite=Lax"
                     
                     # Return response without encoding
                     return Response(

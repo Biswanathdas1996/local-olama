@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FiMessageSquare, FiFileText, FiCpu, FiMenu, FiHome, FiX, FiLayout, FiBookmark, FiZap, FiWifi, FiBarChart, FiDatabase, FiSettings, FiServer } from 'react-icons/fi';
 import { useState } from 'react';
 import { Header } from './Header';
@@ -20,6 +20,7 @@ const navigation = [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, hasPermission } = useAuth();
 
@@ -28,6 +29,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
     if (!item.permission) return true;
     return hasPermission(item.permission);
   });
+
+  // Handle navigation with proper link support - ensure clean navigation without proxy interference
+  const handleNavClick = (href: string) => {
+    setSidebarOpen(false);
+    // Use programmatic navigation to ensure clean route transition
+    // Important: This ensures we navigate away from any proxy URLs cleanly
+    navigate(href, { replace: false });
+  };
 
   return (
     <div id="layout-root" className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 tech-grid">
@@ -66,52 +75,55 @@ export function Layout({ children }: { children: React.ReactNode }) {
               const Icon = item.icon;
               
               return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`group flex items-center space-x-2.5 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-medium transition-all text-sm sm:text-base relative overflow-hidden ${
-                    isActive
-                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white tech-shadow neon-blue'
-                      : 'text-slate-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-700'
-                  }`}
-                >
-                  {isActive && (
-                    <div id={`nav-active-bg-${item.name.toLowerCase()}`} className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-indigo-400/20 animate-pulse-slow" />
-                  )}
-                  <Icon className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 relative z-10 transition-transform group-hover:scale-110 ${
-                    isActive ? 'text-white drop-shadow-lg' : 'text-blue-600'
-                  }`} />
-                  <span className="truncate relative z-10">{item.name}</span>
-                  {isActive && (
-                    <div id={`nav-active-indicator-${item.name.toLowerCase()}`} className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white/30 rounded-l-full" />
-                  )}
-                </Link>
+                <div key={item.name}>
+                  <button
+                    onClick={() => handleNavClick(item.href)}
+                    className={`group w-full flex items-center space-x-2.5 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-medium transition-all text-sm sm:text-base relative overflow-hidden text-left ${
+                      isActive
+                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white tech-shadow neon-blue'
+                        : 'text-slate-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-700'
+                    }`}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    {isActive && (
+                      <div id={`nav-active-bg-${item.name.toLowerCase()}`} className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-indigo-400/20 animate-pulse-slow" />
+                    )}
+                    <Icon className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 relative z-10 transition-transform group-hover:scale-110 ${
+                      isActive ? 'text-white drop-shadow-lg' : 'text-blue-600'
+                    }`} />
+                    <span className="truncate relative z-10">{item.name}</span>
+                    {isActive && (
+                      <div id={`nav-active-indicator-${item.name.toLowerCase()}`} className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white/30 rounded-l-full" />
+                    )}
+                  </button>
+                </div>
               );
             })}
             
             {/* Admin Link - Only for admins */}
             {user?.is_admin && (
-              <Link
-                to="/admin"
-                onClick={() => setSidebarOpen(false)}
-                className={`group flex items-center space-x-2.5 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-medium transition-all text-sm sm:text-base relative overflow-hidden ${
-                  location.pathname === '/admin'
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white tech-shadow'
-                    : 'text-slate-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700'
-                }`}
-              >
-                {location.pathname === '/admin' && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-pink-400/20 animate-pulse-slow" />
-                )}
-                <FiSettings className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 relative z-10 transition-transform group-hover:scale-110 ${
-                  location.pathname === '/admin' ? 'text-white drop-shadow-lg' : 'text-purple-600'
-                }`} />
-                <span className="truncate relative z-10">Admin Panel</span>
-                {location.pathname === '/admin' && (
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white/30 rounded-l-full" />
-                )}
-              </Link>
+              <div>
+                <button
+                  onClick={() => handleNavClick('/admin')}
+                  className={`group w-full flex items-center space-x-2.5 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-medium transition-all text-sm sm:text-base relative overflow-hidden text-left ${
+                    location.pathname === '/admin'
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white tech-shadow'
+                      : 'text-slate-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700'
+                  }`}
+                  aria-current={location.pathname === '/admin' ? 'page' : undefined}
+                >
+                  {location.pathname === '/admin' && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-pink-400/20 animate-pulse-slow" />
+                  )}
+                  <FiSettings className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 relative z-10 transition-transform group-hover:scale-110 ${
+                    location.pathname === '/admin' ? 'text-white drop-shadow-lg' : 'text-purple-600'
+                  }`} />
+                  <span className="truncate relative z-10">Admin Panel</span>
+                  {location.pathname === '/admin' && (
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white/30 rounded-l-full" />
+                  )}
+                </button>
+              </div>
             )}
           </nav>
 

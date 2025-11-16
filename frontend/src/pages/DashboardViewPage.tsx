@@ -60,12 +60,15 @@ export function DashboardViewPage() {
   }, [decodedUrl]);
 
   const handleBack = () => {
-    navigate('/metabase');
+    // Use replace to avoid proxy state in history
+    navigate('/metabase', { replace: true });
   };
 
   const handleOpenExternal = () => {
     if (decodedUrl) {
-      window.open(decodedUrl, '_blank');
+      // Ensure external links don't interfere with app navigation
+      const externalUrl = decodedUrl.startsWith('/') ? `http://localhost:3001${decodedUrl}` : decodedUrl;
+      window.open(externalUrl, '_blank', 'noopener,noreferrer');
     }
   };
 
