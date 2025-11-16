@@ -10,6 +10,7 @@ import { TemplatesPage } from './pages/TemplatesPage';
 import { SavedTemplatesPage } from './pages/SavedTemplatesPage';
 import { TrainingPage } from './pages/TrainingPage';
 import { ConnectPage } from './pages/ConnectPage';
+import { MCPPage } from './pages/MCPPage';
 import { LandingPage } from './pages/LandingPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { MetabasePage } from './pages/MetabasePage';
@@ -79,6 +80,7 @@ function App() {
                     </ProtectedRoute>
                   } />
                   <Route path="/connect" element={<ConnectPage />} />
+                  <Route path="/mcp" element={<MCPPage />} />
                 </Routes>
               </Layout>
             </ProtectedRoute>

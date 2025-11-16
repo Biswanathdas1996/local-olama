@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Connection - LLM-365</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .copy-button:hover {
+            transform: scale(1.05);
+        }
+        .code-block {
+            background: #1e293b;
+            border-radius: 8px;
+            position: relative;
+        }
+        .language-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #3b82f6;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .tooltip {
+            visibility: hidden;
+            position: absolute;
+            background: #10b981;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            top: -30px;
+            right: 0;
+            white-space: nowrap;
+        }
+        .copy-button:hover .tooltip {
+            visibility: visible;
+        }
+        .success-tooltip {
+            background: #10b981 !important;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 min-h-screen text-white">
+    <!-- Header -->
+    <header class="bg-slate-900/50 backdrop-blur-lg border-b border-purple-500/20">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <i class="fas fa-brain text-4xl text-purple-400"></i>
+                    <div>
+                        <h1 class="text-2xl font-bold text-white">LLM-365</h1>
+                        <p class="text-sm text-purple-300">Model Context Protocol Connection</p>
+                    </div>
+                </div>
+                <nav class="flex space-x-4">
+                    <a href="/" class="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 transition">
+                        <i class="fas fa-home mr-2"></i>Home
+                    </a>
+                    <a href="/docs" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 transition">
+                        <i class="fas fa-book mr-2"></i>API Docs
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-8">
+        <!-- Introduction -->
+        <div class="bg-slate-800/50 backdrop-blur-lg rounded-xl shadow-2xl p-8 mb-8 border border-purple-500/20">
+            <div class="flex items-start space-x-4">
+                <i class="fas fa-plug text-5xl text-purple-400 mt-2"></i>
+                <div class="flex-1">
+                    <h2 class="text-3xl font-bold mb-4 text-purple-300">
+                        Connect Your Application via MCP
+                    </h2>
+                    <p class="text-lg text-slate-300 mb-4">
+                        The <strong>Model Context Protocol (MCP)</strong> allows any compatible application to consume LLM-365's AI capabilities. 
+                        Configure your MCP client to connect and start leveraging our local LLM infrastructure.
+                    </p>
+                    <div class="bg-purple-900/30 border-l-4 border-purple-400 p-4 rounded mb-4">
+                        <p class="text-sm">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            MCP provides a standardized way to integrate AI capabilities into your applications without building custom integrations.
+                        </p>
+                    </div>
+                    
+                    <!-- Quick Connection Details -->
+                    <div class="bg-gradient-to-r from-blue-900/40 to-purple-900/40 border border-blue-500/30 rounded-lg p-6 mt-6">
+                        <h3 class="text-xl font-bold mb-4 flex items-center text-blue-300">
+                            <i class="fas fa-network-wired mr-2"></i>
+                            MCP Connection Details
+                        </h3>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-xs text-slate-400 uppercase tracking-wide block mb-2">Protocol</label>
+                                <div class="bg-slate-900/60 px-4 py-2 rounded-lg">
+                                    <code class="text-blue-300 font-mono text-sm">stdio</code>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-400 uppercase tracking-wide block mb-2">Command</label>
+                                <div class="bg-slate-900/60 px-4 py-2 rounded-lg flex items-center justify-between">
+                                    <code class="text-green-300 font-mono text-sm">python -m mcp_server.server</code>
+                                    <button onclick="copyToClipboard('mcp-command')" 
+                                            class="copy-button text-purple-400 hover:text-purple-300 transition ml-2">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                    <span id="mcp-command" class="hidden">python -m mcp_server.server</span>
+                                </div>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="text-xs text-slate-400 uppercase tracking-wide block mb-2">Environment Variable</label>
+                                <div class="bg-slate-900/60 px-4 py-2 rounded-lg flex items-center justify-between">
+                                    <code class="text-yellow-300 font-mono text-sm">LLM365_BASE_URL=http://192.168.1.7:8000</code>
+                                    <button onclick="copyToClipboard('mcp-env')" 
+                                            class="copy-button text-purple-400 hover:text-purple-300 transition ml-2">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                    <span id="mcp-env" class="hidden">LLM365_BASE_URL=http://192.168.1.7:8000</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-blue-500/20">
+                            <p class="text-sm text-slate-300">
+                                <i class="fas fa-lightbulb text-yellow-400 mr-2"></i>
+                                <strong>Quick Tip:</strong> Use the configuration examples below to integrate with Claude Desktop, VS Code, or any MCP-compatible application.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Start -->
+        <div class="grid md:grid-cols-2 gap-8 mb-8">
+            <!-- Server Information -->
+            <div class="bg-slate-800/50 backdrop-blur-lg rounded-xl shadow-2xl p-6 border border-purple-500/20">
+                <h3 class="text-2xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-server text-purple-400 mr-3"></i>
+                    Server Information
+                </h3>
+                <div class="space-y-4">
+                    <div class="bg-slate-900/50 p-4 rounded-lg">
+                        <label class="text-sm text-slate-400 block mb-1">Base URL</label>
+                        <div class="flex items-center justify-between">
+                            <code class="text-green-400 font-mono" id="base-url">http://192.168.1.7:8000</code>
+                            <button onclick="copyToClipboard('base-url')" 
+                                    class="copy-button text-purple-400 hover:text-purple-300 transition px-3 py-1 rounded relative">
+                                <i class="fas fa-copy"></i>
+                                <span class="tooltip">Copy</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="bg-slate-900/50 p-4 rounded-lg">
+                        <label class="text-sm text-slate-400 block mb-1">MCP Protocol</label>
+                        <code class="text-blue-400 font-mono">stdio</code>
+                    </div>
+                    <div class="bg-slate-900/50 p-4 rounded-lg">
+                        <label class="text-sm text-slate-400 block mb-1">Status</label>
+                        <div class="flex items-center">
+                            <span class="w-3 h-3 bg-green-500 rounded-full mr-2 animate-pulse"></span>
+                            <span class="text-green-400" id="status">Checking...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Available Tools -->
+            <div class="bg-slate-800/50 backdrop-blur-lg rounded-xl shadow-2xl p-6 border border-purple-500/20">
+                <h3 class="text-2xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-tools text-purple-400 mr-3"></i>
+                    Available Tools
+                </h3>
+                <div class="space-y-3">
+                    <div class="bg-slate-900/50 p-3 rounded-lg flex items-center">
+                        <i class="fas fa-comment-dots text-green-400 mr-3"></i>
+                        <div>
+                            <div class="font-semibold">generate_text</div>
+                            <div class="text-sm text-slate-400">Generate text with LLM</div>
+                        </div>
+                    </div>
+                    <div class="bg-slate-900/50 p-3 rounded-lg flex items-center">
+                        <i class="fas fa-list text-blue-400 mr-3"></i>
+                        <div>
+                            <div class="font-semibold">list_models</div>
+                            <div class="text-sm text-slate-400">List available models</div>
+                        </div>
+                    </div>
+                    <div class="bg-slate-900/50 p-3 rounded-lg flex items-center">
+                        <i class="fas fa-heartbeat text-red-400 mr-3"></i>
+                        <div>
+                            <div class="font-semibold">check_health</div>
+                            <div class="text-sm text-slate-400">Check service health</div>
+                        </div>
+                    </div>
+                    <div class="bg-slate-900/50 p-3 rounded-lg flex items-center">
+                        <i class="fas fa-download text-purple-400 mr-3"></i>
+                        <div>
+                            <div class="font-semibold">download_model</div>
+                            <div class="text-sm text-slate-400">Download new models</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuration Examples -->
+        <div class="bg-slate-800/50 backdrop-blur-lg rounded-xl shadow-2xl p-8 mb-8 border border-purple-500/20">
+            <h3 class="text-2xl font-bold mb-6 flex items-center">
+                <i class="fas fa-cog text-purple-400 mr-3"></i>
+                Configuration Examples
+            </h3>
+
+            <!-- Claude Desktop -->
+            <div class="mb-8">
+                <h4 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fas fa-desktop text-blue-400 mr-2"></i>
+                    Claude Desktop - MCP Configuration
+                </h4>
+                <p class="text-slate-300 mb-4">
+                    Add this <strong>MCP server configuration</strong> to your Claude Desktop config file:
+                    <br>
+                    <code class="text-purple-300 ml-2 bg-slate-900/50 px-2 py-1 rounded">~/Library/Application Support/Claude/claude_desktop_config.json</code> (macOS)
+                    <br>
+                    <code class="text-purple-300 ml-2 bg-slate-900/50 px-2 py-1 rounded">%APPDATA%\Claude\claude_desktop_config.json</code> (Windows)
+                </p>
+                <div class="bg-blue-900/20 border-l-4 border-blue-400 p-4 rounded mb-4">
+                    <p class="text-sm text-blue-200">
+                        <i class="fas fa-star mr-2"></i>
+                        This enables Claude to use your local LLM-365 server as an MCP tool provider.
+                    </p>
+                </div>
+                <div class="code-block p-6">
+                    <span class="language-badge">JSON</span>
+                    <button onclick="copyCode('claude-config')" 
+                            class="copy-button absolute top-3 left-3 bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded transition">
+                        <i class="fas fa-copy mr-1"></i> Copy
+                    </button>
+                    <pre id="claude-config" class="text-sm overflow-x-auto text-slate-200 mt-6"><code>{
+  "mcpServers": {
+    "llm365": {
+      "command": "python",
+      "args": [
+        "-m",
+        "mcp_server.server"
+      ],
+      "env": {
+        "LLM365_BASE_URL": "http://192.168.1.7:8000"
+      }
+    }
+  }
+}</code></pre>
+                </div>
+            </div>
+
+            <!-- Generic MCP Client -->
+            <div class="mb-8">
+                <h4 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fas fa-code text-green-400 mr-2"></i>
+                    Generic MCP Client (Python) - Connect to MCP Server
+                </h4>
+                <p class="text-slate-300 mb-4">
+                    Use this Python code to <strong>connect to the LLM-365 MCP server</strong> and call its tools:
+                </p>
+                <div class="bg-green-900/20 border-l-4 border-green-400 p-4 rounded mb-4">
+                    <p class="text-sm text-green-200">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        This example shows how to connect via MCP stdio protocol and use the generate_text tool.
+                    </p>
+                </div>
+                <div class="code-block p-6">
+                    <span class="language-badge">Python</span>
+                    <button onclick="copyCode('python-client')" 
+                            class="copy-button absolute top-3 left-3 bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded transition">
+                        <i class="fas fa-copy mr-1"></i> Copy
+                    </button>
+                    <pre id="python-client" class="text-sm overflow-x-auto text-slate-200 mt-6"><code>import asyncio
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+
+async def main():
+    server_params = StdioServerParameters(
+        command="python",
+        args=["-m", "mcp_server.server"],
+        env={"LLM365_BASE_URL": "http://192.168.1.7:8000"}
+    )
+    
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            # Initialize
+            await session.initialize()
+            
+            # List available tools
+            tools = await session.list_tools()
+            print(f"Available tools: {tools}")
+            
+            # Call generate_text tool
+            result = await session.call_tool(
+                "generate_text",
+                arguments={
+                    "model": "llama3.1:8b",
+                    "prompt": "Explain quantum computing",
+                    "temperature": 0.7
+                }
+            )
+            
+            print(f"Response: {result}")
+
+asyncio.run(main())</code></pre>
+                </div>
+            </div>
+
+            <!-- Direct API Call (Alternative) -->
+            <div>
+                <h4 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fas fa-terminal text-yellow-400 mr-2"></i>
+                    Direct REST API Call (Without MCP)
+                </h4>
+                <p class="text-slate-300 mb-4">
+                    You can also <strong>bypass MCP</strong> and call the REST API directly using cURL or any HTTP client:
+                </p>
+                <div class="bg-yellow-900/20 border-l-4 border-yellow-400 p-4 rounded mb-4">
+                    <p class="text-sm text-yellow-200">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        This method doesn't use MCP but provides direct access to the same LLM capabilities.
+                    </p>
+                </div>
+                <div class="code-block p-6">
+                    <span class="language-badge">Bash</span>
+                    <button onclick="copyCode('curl-example')" 
+                            class="copy-button absolute top-3 left-3 bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded transition">
+                        <i class="fas fa-copy mr-1"></i> Copy
+                    </button>
+                    <pre id="curl-example" class="text-sm overflow-x-auto text-slate-200 mt-6"><code>curl -X POST "http://192.168.1.7:8000/generate" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "llama3.1:8b",
+    "prompt": "Explain quantum computing",
+    "temperature": 0.7
+  }'</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features -->
+        <div class="bg-slate-800/50 backdrop-blur-lg rounded-xl shadow-2xl p-8 mb-8 border border-purple-500/20">
+            <h3 class="text-2xl font-bold mb-6 flex items-center">
+                <i class="fas fa-star text-purple-400 mr-3"></i>
+                Key Features
+            </h3>
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="bg-slate-900/50 p-6 rounded-lg">
+                    <i class="fas fa-database text-blue-400 text-3xl mb-3"></i>
+                    <h4 class="font-semibold text-lg mb-2">RAG Support</h4>
+                    <p class="text-slate-400 text-sm">
+                        Augment responses with document context using hybrid search across your indexed data.
+                    </p>
+                </div>
+                <div class="bg-slate-900/50 p-6 rounded-lg">
+                    <i class="fas fa-sliders-h text-green-400 text-3xl mb-3"></i>
+                    <h4 class="font-semibold text-lg mb-2">Customizable</h4>
+                    <p class="text-slate-400 text-sm">
+                        Control temperature, top_p, max_tokens, and output formats (JSON, CSV, PDF, etc.).
+                    </p>
+                </div>
+                <div class="bg-slate-900/50 p-6 rounded-lg">
+                    <i class="fas fa-shield-alt text-red-400 text-3xl mb-3"></i>
+                    <h4 class="font-semibold text-lg mb-2">Guardrails</h4>
+                    <p class="text-slate-400 text-sm">
+                        Optional content safety filters for input and output validation.
+                    </p>
+                </div>
+                <div class="bg-slate-900/50 p-6 rounded-lg">
+                    <i class="fas fa-rocket text-purple-400 text-3xl mb-3"></i>
+                    <h4 class="font-semibold text-lg mb-2">Multiple Models</h4>
+                    <p class="text-slate-400 text-sm">
+                        Support for various LLM models - Llama, Mistral, CodeLlama, and more.
+                    </p>
+                </div>
+                <div class="bg-slate-900/50 p-6 rounded-lg">
+                    <i class="fas fa-sync text-yellow-400 text-3xl mb-3"></i>
+                    <h4 class="font-semibold text-lg mb-2">Async Processing</h4>
+                    <p class="text-slate-400 text-sm">
+                        Handle multiple concurrent requests efficiently with async architecture.
+                    </p>
+                </div>
+                <div class="bg-slate-900/50 p-6 rounded-lg">
+                    <i class="fas fa-chart-line text-pink-400 text-3xl mb-3"></i>
+                    <h4 class="font-semibold text-lg mb-2">Analytics</h4>
+                    <p class="text-slate-400 text-sm">
+                        Track usage, performance, and insights through integrated Metabase dashboards.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Example Usage -->
+        <div class="bg-slate-800/50 backdrop-blur-lg rounded-xl shadow-2xl p-8 border border-purple-500/20">
+            <h3 class="text-2xl font-bold mb-6 flex items-center">
+                <i class="fas fa-play-circle text-purple-400 mr-3"></i>
+                Example Tool Calls
+            </h3>
+            
+            <div class="space-y-6">
+                <!-- Generate Text -->
+                <div>
+                    <h4 class="text-lg font-semibold mb-3 text-purple-300">1. Generate Text (Basic)</h4>
+                    <div class="code-block p-4">
+                        <pre class="text-sm text-slate-200"><code>{
+  "model": "llama3.1:8b",
+  "prompt": "Explain quantum computing in simple terms",
+  "temperature": 0.7,
+  "max_tokens": 500
+}</code></pre>
+                    </div>
+                </div>
+
+                <!-- RAG Example -->
+                <div>
+                    <h4 class="text-lg font-semibold mb-3 text-purple-300">2. Generate with RAG</h4>
+                    <div class="code-block p-4">
+                        <pre class="text-sm text-slate-200"><code>{
+  "model": "llama3.1:8b",
+  "prompt": "What are the key findings in the research?",
+  "indices": ["research_docs", "technical_papers"],
+  "search_type": "hybrid",
+  "search_top_k": 5,
+  "temperature": 0.5
+}</code></pre>
+                    </div>
+                </div>
+
+                <!-- JSON Output -->
+                <div>
+                    <h4 class="text-lg font-semibold mb-3 text-purple-300">3. Generate JSON Output</h4>
+                    <div class="code-block p-4">
+                        <pre class="text-sm text-slate-200"><code>{
+  "model": "llama3.1:8b",
+  "prompt": "List 5 programming languages with their use cases",
+  "output_format": "JSON",
+  "temperature": 0.3
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Getting Started -->
+        <div class="bg-gradient-to-r from-purple-900/50 to-blue-900/50 backdrop-blur-lg rounded-xl shadow-2xl p-8 border border-purple-500/20 mt-8">
+            <h3 class="text-2xl font-bold mb-4 flex items-center">
+                <i class="fas fa-rocket text-purple-400 mr-3"></i>
+                Getting Started with MCP Connection
+            </h3>
+            <ol class="space-y-3 text-slate-200">
+                <li class="flex items-start">
+                    <span class="bg-purple-600 rounded-full w-8 h-8 flex items-center justify-center mr-3 flex-shrink-0">1</span>
+                    <div>
+                        <strong>Install MCP Package:</strong>
+                        <br>
+                        <code class="bg-slate-900/50 px-2 py-1 rounded">pip install mcp</code>
+                    </div>
+                </li>
+                <li class="flex items-start">
+                    <span class="bg-purple-600 rounded-full w-8 h-8 flex items-center justify-center mr-3 flex-shrink-0">2</span>
+                    <div>
+                        <strong>Start the LLM-365 Server:</strong>
+                        <br>
+                        <code class="bg-slate-900/50 px-2 py-1 rounded">python main.py</code>
+                        <span class="text-slate-400 text-sm ml-2">(Backend must be running on http://192.168.1.7:8000)</span>
+                    </div>
+                </li>
+                <li class="flex items-start">
+                    <span class="bg-purple-600 rounded-full w-8 h-8 flex items-center justify-center mr-3 flex-shrink-0">3</span>
+                    <div>
+                        <strong>Configure Your MCP Client:</strong>
+                        <br>
+                        <span class="text-slate-300">Use the configuration examples above (Claude Desktop, Python client, etc.)</span>
+                    </div>
+                </li>
+                <li class="flex items-start">
+                    <span class="bg-purple-600 rounded-full w-8 h-8 flex items-center justify-center mr-3 flex-shrink-0">4</span>
+                    <div>
+                        <strong>Start Using LLM-365:</strong>
+                        <br>
+                        <span class="text-slate-300">Your MCP-compatible application can now access all LLM-365 tools and capabilities!</span>
+                    </div>
+                </li>
+            </ol>
+            
+            <div class="mt-6 p-4 bg-blue-900/30 border border-blue-500/30 rounded-lg">
+                <h4 class="font-semibold text-blue-300 mb-2 flex items-center">
+                    <i class="fas fa-book-open mr-2"></i>
+                    Need Help?
+                </h4>
+                <p class="text-sm text-slate-300">
+                    • Read the full <a href="/MCP_README.md" class="text-purple-400 hover:text-purple-300 underline">MCP Documentation</a>
+                    <br>
+                    • Check the <a href="/docs" class="text-purple-400 hover:text-purple-300 underline">API Documentation</a>
+                    <br>
+                    • View <a href="/analytics.html" class="text-purple-400 hover:text-purple-300 underline">Usage Analytics</a>
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900/50 backdrop-blur-lg border-t border-purple-500/20 mt-12 py-6">
+        <div class="container mx-auto px-6 text-center text-slate-400">
+            <p>LLM-365 MCP Server &copy; 2025 | 
+                <a href="/docs" class="text-purple-400 hover:text-purple-300">API Documentation</a> | 
+                <a href="/analytics.html" class="text-purple-400 hover:text-purple-300">Analytics</a>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Copy to clipboard functionality
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                showCopySuccess(element);
+            });
+        }
+
+        function copyCode(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                showCopySuccess(element);
+            });
+        }
+
+        function showCopySuccess(element) {
+            // Find the button related to this element
+            const button = element.nextElementSibling || element.previousElementSibling;
+            if (button && button.classList.contains('copy-button')) {
+                const originalHTML = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-check mr-1"></i> Copied!';
+                button.classList.add('bg-green-600');
+                
+                setTimeout(() => {
+                    button.innerHTML = originalHTML;
+                    button.classList.remove('bg-green-600');
+                }, 2000);
+            }
+        }
+
+        // Check server status
+        async function checkStatus() {
+            try {
+                const response = await fetch('http://192.168.1.7:8000/health');
+                const data = await response.json();
+                
+                const statusElement = document.getElementById('status');
+                if (data.status === 'healthy') {
+                    statusElement.textContent = 'Online';
+                    statusElement.classList.add('text-green-400');
+                } else {
+                    statusElement.textContent = 'Degraded';
+                    statusElement.classList.add('text-yellow-400');
+                }
+            } catch (error) {
+                const statusElement = document.getElementById('status');
+                statusElement.textContent = 'Offline';
+                statusElement.classList.add('text-red-400');
+            }
+        }
+
+        // Check status on page load
+        checkStatus();
+    </script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { FiMessageSquare, FiFileText, FiCpu, FiMenu, FiHome, FiX, FiLayout, FiBookmark, FiZap, FiWifi, FiBarChart, FiDatabase, FiSettings } from 'react-icons/fi';
+import { FiMessageSquare, FiFileText, FiCpu, FiMenu, FiHome, FiX, FiLayout, FiBookmark, FiZap, FiWifi, FiBarChart, FiDatabase, FiSettings, FiServer } from 'react-icons/fi';
 import { useState } from 'react';
 import { Header } from './Header';
 import { useAuth } from '../contexts/AuthContext';
@@ -14,6 +14,7 @@ const navigation = [
   { name: 'Templates', href: '/templates', icon: FiLayout, permission: 'templates.read' },
   { name: 'Saved Templates', href: '/saved-templates', icon: FiBookmark, permission: 'templates.read' },
   { name: 'Analytics', href: '/analytics', icon: FiBarChart, permission: 'analytics.read' },
+  { name: 'MCP Connection', href: '/mcp', icon: FiServer },
   { name: 'Connect', href: '/connect', icon: FiWifi },
 ];
 

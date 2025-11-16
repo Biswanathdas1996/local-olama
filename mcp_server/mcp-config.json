@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "llm365": {
+      "command": "python",
+      "args": [
+        "-m",
+        "mcp_server.server"
+      ],
+      "env": {
+        "LLM365_BASE_URL": "http://192.168.1.7:8000"
+      }
+    }
+  }
+}

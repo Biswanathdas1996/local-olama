@@ -412,6 +412,23 @@ async def analytics_page():
         raise HTTPException(status_code=404, detail="Analytics page not found")
 
 
+# Serve MCP connection page
+@app.get(
+    "/connect",
+    tags=["Frontend"],
+    summary="MCP Connection Guide",
+    description="Serve the MCP (Model Context Protocol) connection guide page."
+)
+async def connect_page():
+    """Serve the MCP connection guide HTML page."""
+    import os
+    connect_path = os.path.join(os.path.dirname(__file__), "frontend", "connect.html")
+    if os.path.exists(connect_path):
+        return FileResponse(connect_path)
+    else:
+        raise HTTPException(status_code=404, detail="Connect page not found")
+
+
 # Root endpoint
 @app.get(
     "/",
@@ -428,7 +445,8 @@ async def root():
         "docs": "/docs",
         "redoc": "/redoc",
         "health": "/health",
-        "analytics": "/analytics.html"
+        "analytics": "/analytics.html",
+        "mcp_connection": "/connect"
     }
 
 
